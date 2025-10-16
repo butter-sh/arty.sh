@@ -1,0 +1,19 @@
+name: "arty.sh"
+version: "1.0.0"
+description: "A bash library repository management system"
+author: ""
+license: "MIT"
+
+# Dependencies from other arty.sh repositories
+references:
+  # Example references:
+  # - https://github.com/username/bash-utils.git
+  # - https://github.com/username/test-framework.git
+
+# Entry point script
+main: "arty.sh"
+
+# Available commands/scripts
+scripts:
+  install: "bash arty.sh install"
+  test: "bash test.sh"
