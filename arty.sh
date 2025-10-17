@@ -160,8 +160,82 @@ install_deps() {
         return 1
     fi
     
+    # Create local .arty folder structure
+    local local_arty_dir=".arty"
+    local local_bin_dir="$local_arty_dir/bin"
+    local local_libs_dir="$local_arty_dir/libs"
+    
+    log_info "Creating local arty structure"
+    mkdir -p "$local_bin_dir" "$local_libs_dir"
+    
     log_info "Installing dependencies from $config_file"
-    install_references "$config_file"
+    
+    # Install references into local .arty/libs/<DEPENDENCY_NAME>
+    local in_references=false
+    local line_num=0
+    
+    while IFS= read -r line; do
+        line_num=$((line_num+1))
+        
+        # Check if we're entering references section
+        if [[ "$line" =~ ^references:[[:space:]]*$ ]]; then
+            in_references=true
+            continue
+        fi
+        
+        # Check if we're leaving references section
+        if [[ "$in_references" == true ]] && [[ "$line" =~ ^[a-zA-Z] ]]; then
+            in_references=false
+        fi
+        
+        # Parse reference entries
+        if [[ "$in_references" == true ]] && [[ "$line" =~ ^[[:space:]]+-[[:space:]]+(.+)$ ]]; then
+            local ref="${BASH_REMATCH[1]}"
+            local dep_name=$(get_lib_name "$ref")
+            local dep_dir="$local_libs_dir/$dep_name"
+            
+            log_info "Installing dependency: $dep_name"
+            
+            # Clone or update dependency
+            if [[ -d "$dep_dir" ]]; then
+                log_info "Dependency already exists, updating..."
+                (cd "$dep_dir" && git pull) || {
+                    log_error "Failed to update dependency: $dep_name"
+                    continue
+                }
+            else
+                git clone "$ref" "$dep_dir" || {
+                    log_error "Failed to clone dependency: $dep_name"
+                    continue
+                }
+            fi
+            
+            # Run setup hook if exists
+            if [[ -f "$dep_dir/setup.sh" ]]; then
+                log_info "Running setup hook for $dep_name..."
+                (cd "$dep_dir" && bash setup.sh) || {
+                    log_warn "Setup hook failed for $dep_name, continuing anyway..."
+                }
+            fi
+            
+            log_success "Dependency '$dep_name' installed successfully"
+        fi
+    done < "$config_file"
+    
+    # Link main script to .arty/bin if defined
+    local main_script=$(grep "^main:" "$config_file" | cut -d':' -f2 | tr -d ' "')
+    if [[ -n "$main_script" ]] && [[ -f "$main_script" ]]; then
+        local main_name=$(basename "$main_script" .sh)
+        local bin_link="$local_bin_dir/$main_name"
+        
+        log_info "Linking main script: $main_script -> $bin_link"
+        ln -sf "../../$main_script" "$bin_link"
+        chmod +x "$main_script"
+        log_success "Main script linked and made executable"
+    elif [[ -n "$main_script" ]]; then
+        log_warn "Main script defined but not found: $main_script"
+    fi
+    
     log_success "All dependencies installed"
 }
 
@@ -219,6 +293,14 @@ init_project() {
     
     log_info "Initializing new arty project: $project_name"
     
+    # Create local .arty folder structure
+    local local_arty_dir=".arty"
+    local local_bin_dir="$local_arty_dir/bin"
+    local local_libs_dir="$local_arty_dir/libs"
+    
+    log_info "Creating project structure"
+    mkdir -p "$local_bin_dir" "$local_libs_dir"
+    
     cat > "$ARTY_CONFIG_FILE" << EOF
 name: "$project_name"
 version: "0.1.0"
@@ -241,6 +323,7 @@ scripts:
 EOF
     
     log_success "Created $ARTY_CONFIG_FILE"
+    log_success "Created .arty/ folder structure"
 }
 
 # Source/load a library
@@ -259,7 +342,7 @@ source_lib() {
 
 # Show usage
 show_usage() {
-    cat << EOF
+    cat << 'EOF'
 arty.sh - A bash library repository management system
 
 USAGE:
@@ -272,6 +355,7 @@ COMMANDS:
     remove <name>              Remove an installed library
     init [name]                Initialize a new arty.yml project
     source <name> [file]       Source a library (for use in scripts)
+    <script-name>              Execute a script defined in arty.yml
     help                       Show this help message
 
 EXAMPLES:
@@ -290,8 +374,23 @@ EXAMPLES:
     # Initialize new project
     arty init my-project
 
+    # Execute a script from arty.yml
+    arty test
+    arty build
+
     # Source library in a script
     source <(arty source utils)
+
+PROJECT STRUCTURE:
+    When running 'arty init' or 'arty deps', the following structure is created:
+    
+    project/
+    ├── .arty/
+    │   ├── bin/           # Linked executables (from 'main' field)
+    │   └── libs/          # Dependencies (from 'references' field)
+    │       ├── dep1/
+    │       └── dep2/
+    └── arty.yml           # Project configuration
 
 ENVIRONMENT:
     ARTY_HOME       Home directory for arty (default: ~/.arty)
@@ -303,6 +402,57 @@ INSTALLATION:
     sudo chmod +x /usr/local/bin/arty
 
 EOF
+}
+
+# Execute a script from arty.yml
+exec_script() {
+    local script_name="$1"
+    local config_file="${ARTY_CONFIG_FILE}"
+    
+    if [[ ! -f "$config_file" ]]; then
+        log_error "Config file not found: $config_file"
+        log_info "Run this command in a directory with arty.yml"
+        return 1
+    fi
+    
+    # Parse scripts section
+    local in_scripts=false
+    local found_script=false
+    
+    while IFS= read -r line; do
+        # Check if we're entering scripts section
+        if [[ "$line" =~ ^scripts:[[:space:]]*$ ]]; then
+            in_scripts=true
+            continue
+        fi
+        
+        # Check if we're leaving scripts section
+        if [[ "$in_scripts" == true ]] && [[ "$line" =~ ^[a-zA-Z] ]]; then
+            in_scripts=false
+        fi
+        
+        # Parse script entries
+        if [[ "$in_scripts" == true ]] && [[ "$line" =~ ^[[:space:]]+([a-zA-Z0-9_-]+):[[:space:]]*(.+)$ ]]; then
+            local name="${BASH_REMATCH[1]}"
+            local cmd="${BASH_REMATCH[2]}"
+            # Remove quotes if present
+            cmd=$(echo "$cmd" | sed 's/^"\(.*\)"$/\1/' | sed "s/^'\(.*\)'$/\1/")
+            
+            if [[ "$name" == "$script_name" ]]; then
+                found_script=true
+                log_info "Executing script: $script_name"
+                eval "$cmd"
+                return $?
+            fi
+        fi
+    done < "$config_file"
+    
+    if [[ "$found_script" == false ]]; then
+        log_error "Script not found in arty.yml: $script_name"
+        log_info "Available scripts:"
+        grep -A 100 "^scripts:" "$config_file" | grep "^  [a-zA-Z]" | sed 's/^  /  - /' | cut -d':' -f1
+        return 1
+    fi
 }
 
 # Main function
@@ -350,9 +500,14 @@ main() {
             show_usage
             ;;
         *)
-            log_error "Unknown command: $command"
-            show_usage
-            exit 1
+            # Try to execute as a script from arty.yml
+            if [[ -f "$ARTY_CONFIG_FILE" ]]; then
+                exec_script "$command" "$@"
+            else
+                log_error "Unknown command: $command"
+                show_usage
+                exit 1
+            fi
             ;;
     esac
 }
