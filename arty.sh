@@ -150,7 +150,12 @@ install_lib() {
 
 # Install all references from arty.yml
 install_references() {
-    local config_file="$1"
+	  local config_file="${1:-$ARTY_CONFIG_FILE}"
+    
+    if [[ ! -f "$config_file" ]]; then
+        log_error "Config file not found: $config_file"
+        return 1
+    fi
     
     # Get all references using yq
     while IFS= read -r ref; do
@@ -375,13 +380,13 @@ main() {
     case "$command" in
         install)
             if [[ $# -eq 0 ]]; then
-                install_libs
+                install_references
             else
             	install_lib "$@"
 						fi
             ;;
         deps)
-            install_libs
+            install_references
             ;;
         list|ls)
             list_libs
