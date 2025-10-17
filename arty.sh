@@ -138,8 +138,24 @@ install_lib() {
         }
     fi
     
-    # Check for arty.yml and install references
+    # Link main script to .arty/bin if arty.yml has a main field
     if [[ -f "$lib_dir/arty.yml" ]]; then
+        local main_script=$(get_yaml_field "$lib_dir/arty.yml" "main")
+        if [[ -n "$main_script" ]] && [[ "$main_script" != "null" ]]; then
+            local main_file="$lib_dir/$main_script"
+            if [[ -f "$main_file" ]]; then
+                local local_bin_dir=".arty/bin"
+                mkdir -p "$local_bin_dir"
+                local bin_link="$local_bin_dir/$lib_name"
+                
+                log_info "Linking main script: $main_script -> $bin_link"
+                ln -sf "../libs/$lib_name/$main_script" "$bin_link"
+                chmod +x "$main_file"
+                log_success "Main script linked to .arty/bin/$lib_name"
+            fi
+        fi
+        
+        # Install references from the library's arty.yml
         log_info "Found arty.yml, checking for references..."
         install_references "$lib_dir/arty.yml"
     fi
@@ -150,7 +166,7 @@ install_lib() {
 
 # Install all references from arty.yml
 install_references() {
-	  local config_file="${1:-$ARTY_CONFIG_FILE}"
+    local config_file="${1:-$ARTY_CONFIG_FILE}"
     
     if [[ ! -f "$config_file" ]]; then
         log_error "Config file not found: $config_file"
@@ -270,6 +286,38 @@ source_lib() {
     source "$lib_path"
 }
 
+# Execute a library's main script
+exec_lib() {
+    local lib_name="$1"
+    shift  # Remove lib_name from arguments, rest are passed to the script
+    
+    local bin_path=".arty/bin/$lib_name"
+    
+    if [[ ! -f "$bin_path" ]]; then
+        log_error "Library executable not found: $lib_name"
+        log_info "Make sure the library is installed with 'arty deps' or 'arty install'"
+        log_info "Available executables:"
+        if [[ -d ".arty/bin" ]]; then
+            for exec_file in .arty/bin/*; do
+                if [[ -f "$exec_file" ]]; then
+                    echo "  - $(basename "$exec_file")"
+                fi
+            done
+        else
+            echo "  (none found - run 'arty deps' first)"
+        fi
+        return 1
+    fi
+    
+    if [[ ! -x "$bin_path" ]]; then
+        log_error "Library executable is not executable: $bin_path"
+        return 1
+    fi
+    
+    # Execute the library's main script with all passed arguments
+    "$bin_path" "$@"
+}
+
 # Show usage
 show_usage() {
     cat << 'EOF'
@@ -285,6 +333,7 @@ COMMANDS:
     remove <name>              Remove an installed library
     init [name]                Initialize a new arty.yml project
     source <name> [file]       Source a library (for use in scripts)
+    exec <lib-name> [args]     Execute a library's main script with arguments
     <script-name>              Execute a script defined in arty.yml
     help                       Show this help message
 
@@ -308,6 +357,10 @@ EXAMPLES:
     arty test
     arty build
 
+    # Execute a library's main script
+    arty exec leaf --help
+    arty exec mylib process file.txt
+
     # Source library in a script
     source <(arty source utils)
 
@@ -317,6 +370,9 @@ PROJECT STRUCTURE:
     project/
     ├── .arty/
     │   ├── bin/           # Linked executables (from 'main' field)
+    │   │   ├── index      # Project's main script
+    │   │   ├── leaf       # Dependency's main script
+    │   │   └── mylib      # Another dependency's main script
     │   └── libs/          # Dependencies (from 'references' field)
     │       ├── dep1/
     │       └── dep2/
@@ -381,9 +437,9 @@ main() {
         install)
             if [[ $# -eq 0 ]]; then
                 install_references
-            else
+						else
             	install_lib "$@"
-						fi
+            fi
             ;;
         deps)
             install_references
@@ -400,6 +456,14 @@ main() {
             ;;
         init)
             init_project "$@"
+            ;;
+        exec)
+            if [[ $# -eq 0 ]]; then
+                log_error "Library name required"
+                log_info "Usage: arty exec <library-name> [arguments]"
+                exit 1
+            fi
+            exec_lib "$@"
             ;;
         source)
             if [[ $# -eq 0 ]]; then
