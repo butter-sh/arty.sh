@@ -6,8 +6,9 @@
 set -euo pipefail
 
 # Configuration
-ARTY_HOME="${ARTY_HOME:-$HOME/.arty}"
+ARTY_HOME="${ARTY_HOME:-$PWD/.arty}"
 ARTY_LIBS_DIR="$ARTY_HOME/libs"
+ARTY_BIN_DIR="$ARTY_HOME/bin"
 ARTY_CONFIG_FILE="${ARTY_CONFIG_FILE:-arty.yml}"
 
 # Colors
@@ -144,15 +145,14 @@ install_lib() {
         if [[ -n "$main_script" ]] && [[ "$main_script" != "null" ]]; then
             local main_file="$lib_dir/$main_script"
             if [[ -f "$main_file" ]]; then
-                local local_bin_dir=".arty/bin"
-                mkdir -p "$local_bin_dir"
+                local local_bin_dir="$ARTY_BIN_DIR"
                 local lib_name_stripped="$(basename $main_script .sh)"
                 local bin_link="$local_bin_dir/$lib_name_stripped"
                 
                 log_info "Linking main script: $main_script -> $bin_link"
-                ln -sf "../libs/$lib_name/$main_script" "$bin_link"
+                ln -sf "$main_file" "$bin_link"
                 chmod +x "$main_file"
-                log_success "Main script linked to .arty/bin/$lib_name_stripped"
+                log_success "Main script linked to $bin_link"
             fi
         fi
         
