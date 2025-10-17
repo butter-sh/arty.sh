@@ -18,6 +18,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+# Global array to track installation stack (prevent circular dependencies)
+declare -g -A ARTY_INSTALL_STACK
+
 # Logging functions
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1" >&2
@@ -107,30 +110,77 @@ get_lib_name() {
     basename "$repo_url" .git
 }
 
+# Normalize library identifier for tracking
+normalize_lib_id() {
+    local repo_url="$1"
+    # Convert to lowercase and remove .git suffix for consistent tracking
+    echo "${repo_url,,}" | sed 's/\.git$//'
+}
+
+# Check if library is in installation stack
+is_installing() {
+    local lib_id="$1"
+    [[ -n "${ARTY_INSTALL_STACK[$lib_id]:-}" ]]
+}
+
+# Add library to installation stack
+mark_installing() {
+    local lib_id="$1"
+    ARTY_INSTALL_STACK[$lib_id]=1
+}
+
+# Remove library from installation stack
+unmark_installing() {
+    local lib_id="$1"
+    unset ARTY_INSTALL_STACK[$lib_id]
+}
+
+# Check if library is already installed
+is_installed() {
+    local lib_name="$1"
+    [[ -d "$ARTY_LIBS_DIR/$lib_name" ]]
+}
+
 # Install a library from git repository
 install_lib() {
     local repo_url="$1"
     local lib_name="${2:-$(get_lib_name "$repo_url")}"
     local lib_dir="$ARTY_LIBS_DIR/$lib_name"
     
+    # Normalize the library identifier for circular dependency detection
+    local lib_id=$(normalize_lib_id "$repo_url")
+    
+    # Check for circular dependency
+    if is_installing "$lib_id"; then
+        log_warn "Circular dependency detected: $lib_name (already being installed)"
+        log_info "Skipping to prevent infinite loop"
+        return 0
+    fi
+    
+    # Check if already installed (optimization)
+    if is_installed "$lib_name"; then
+        log_info "Library '$lib_name' already installed, checking for updates..."
+        # Still try to update, but don't reinstall dependencies
+        (cd "$lib_dir" && git pull -q) || {
+            log_warn "Failed to update library (continuing with existing version)"
+        }
+        return 0
+    fi
+    
+    # Mark as currently installing
+    mark_installing "$lib_id"
+    
     init_arty
     
     log_info "Installing library: $lib_name"
     log_info "Repository: $repo_url"
     
-    # Clone or update repository
-    if [[ -d "$lib_dir" ]]; then
-        log_info "Library already exists, updating..."
-        (cd "$lib_dir" && git pull) || {
-            log_error "Failed to update library"
-            return 1
-        }
-    else
-        git clone "$repo_url" "$lib_dir" || {
-            log_error "Failed to clone repository"
-            return 1
-        }
-    fi
+    # Clone the repository
+    git clone "$repo_url" "$lib_dir" || {
+        log_error "Failed to clone repository"
+        unmark_installing "$lib_id"
+        return 1
+    }
     
     # Run setup hook if exists
     if [[ -f "$lib_dir/setup.sh" ]]; then
@@ -161,6 +211,9 @@ install_lib() {
         log_info "Found arty.yml, checking for references..."
         install_references "$lib_dir/arty.yml"
     fi
+    
+    # Unmark as installing (we're done with this library)
+    unmark_installing "$lib_id"
     
     log_success "Library '$lib_name' installed successfully"
     log_info "Location: $lib_dir"
