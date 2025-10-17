@@ -6,7 +6,8 @@
 set -euo pipefail
 
 # Configuration
-ARTY_HOME="${ARTY_HOME:-$PWD/.arty}"
+PROJECT_DIR="$PWD/.arty"
+ARTY_HOME="${ARTY_HOME:-$PROJECT_DIR}"
 ARTY_LIBS_DIR="$ARTY_HOME/libs"
 ARTY_BIN_DIR="$ARTY_HOME/bin"
 ARTY_CONFIG_FILE="${ARTY_CONFIG_FILE:-arty.yml}"
@@ -295,7 +296,7 @@ init_project() {
     log_info "Initializing new arty project: $project_name"
     
     # Create local .arty folder structure
-    local local_arty_dir=".arty"
+    local local_arty_dir="$ARTY_BIN_DIR/.arty"
     local local_bin_dir="$local_arty_dir/bin"
     local local_libs_dir="$local_arty_dir/libs"
     
@@ -347,14 +348,14 @@ exec_lib() {
     shift  # Remove lib_name from arguments, rest are passed to the script
     
 		local lib_name_stripped="$(basename $lib_name .sh)"
-    local bin_path=".arty/bin/$lib_name_stripped"
+    local bin_path="$ARTY_BIN_DIR/$lib_name_stripped"
     
     if [[ ! -f "$bin_path" ]]; then
         log_error "Library executable not found: $lib_name_stripped"
         log_info "Make sure the library is installed with 'arty deps' or 'arty install'"
         log_info "Available executables:"
-        if [[ -d ".arty/bin" ]]; then
-            for exec_file in .arty/bin/*; do
+        if [[ -d "$ARTY_BIN_DIR" ]]; then
+            for exec_file in $ARTY_BIN_DIR/*; do
                 if [[ -f "$exec_file" ]]; then
                     echo "  - $(basename "$exec_file")"
                 fi
