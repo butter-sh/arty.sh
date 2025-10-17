@@ -49,6 +49,7 @@ check_yq() {
 init_arty() {
     if [[ ! -d "$ARTY_HOME" ]]; then
         mkdir -p "$ARTY_LIBS_DIR"
+				mkdir -p "$ARTY_BIN_DIR"
         log_success "Initialized arty at $ARTY_HOME"
     fi
 }
