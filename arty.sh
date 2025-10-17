@@ -146,7 +146,7 @@ install_lib() {
             local main_file="$lib_dir/$main_script"
             if [[ -f "$main_file" ]]; then
                 local local_bin_dir="$ARTY_BIN_DIR"
-                local lib_name_stripped="$(basename $main_script .sh)"
+                local lib_name_stripped="$(basename $main_file .sh)"
                 local bin_link="$local_bin_dir/$lib_name_stripped"
                 
                 log_info "Linking main script: $main_script -> $bin_link"
