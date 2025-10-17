@@ -146,12 +146,13 @@ install_lib() {
             if [[ -f "$main_file" ]]; then
                 local local_bin_dir=".arty/bin"
                 mkdir -p "$local_bin_dir"
-                local bin_link="$local_bin_dir/$lib_name"
+                local $lib_name_stripped="$(basename $lib_name .sh)"
+                local bin_link="$local_bin_dir/$lib_name_stripped"
                 
                 log_info "Linking main script: $main_script -> $bin_link"
                 ln -sf "../libs/$lib_name/$main_script" "$bin_link"
                 chmod +x "$main_file"
-                log_success "Main script linked to .arty/bin/$lib_name"
+                log_success "Main script linked to .arty/bin/$lib_name_stripped"
             fi
         fi
         
