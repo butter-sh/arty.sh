@@ -34,6 +34,16 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1" >&2
 }
 
+# Check if yq is installed
+check_yq() {
+    if ! command -v yq &> /dev/null; then
+        log_error "yq is not installed. Please install yq to use arty."
+        log_info "Visit https://github.com/mikefarah/yq for installation instructions"
+        log_info "Quick install: brew install yq (macOS) or see README.md"
+        exit 1
+    fi
+}
+
 # Initialize arty environment
 init_arty() {
     if [[ ! -d "$ARTY_HOME" ]]; then
@@ -42,35 +52,51 @@ init_arty() {
     fi
 }
 
-# Parse YAML (simple implementation for arty.yml)
-parse_yaml() {
+# Get a field from YAML using yq
+get_yaml_field() {
     local file="$1"
-    local prefix="${2:-}"
+    local field="$2"
     
     if [[ ! -f "$file" ]]; then
         return 1
     fi
     
-    local s='[[:space:]]*'
-    local w='[a-zA-Z0-9_-]*'
-    
-    sed -ne "s|^\($s\)\($w\)$s:$s\"\(.*\)\"$s\$|\2=\"\3\"|p" \
-        -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\2=\"\3\"|p" "$file" |
-    sed -e "s/^/${prefix}/" \
-        -e 's/_/-/g'
+    yq eval ".$field" "$file" 2>/dev/null || echo ""
 }
 
-# Read arty.yml configuration
-read_config() {
-    local config_file="${1:-$ARTY_CONFIG_FILE}"
+# Get array items from YAML using yq
+get_yaml_array() {
+    local file="$1"
+    local field="$2"
     
-    if [[ ! -f "$config_file" ]]; then
-        log_error "Config file not found: $config_file"
+    if [[ ! -f "$file" ]]; then
         return 1
     fi
     
-    # Parse basic fields
-    eval "$(parse_yaml "$config_file")"
+    yq eval ".${field}[]" "$file" 2>/dev/null
+}
+
+# Get script command from YAML
+get_yaml_script() {
+    local file="$1"
+    local script_name="$2"
+    
+    if [[ ! -f "$file" ]]; then
+        return 1
+    fi
+    
+    yq eval ".scripts.${script_name}" "$file" 2>/dev/null || echo "null"
+}
+
+# List all script names from YAML
+list_yaml_scripts() {
+    local file="$1"
+    
+    if [[ ! -f "$file" ]]; then
+        return 1
+    fi
+    
+    yq eval '.scripts | keys | .[]' "$file" 2>/dev/null
 }
 
 # Get library name from repository URL
@@ -125,30 +151,14 @@ install_lib() {
 # Install all references from arty.yml
 install_references() {
     local config_file="$1"
-    local in_references=false
-    local line_num=0
     
-    while IFS= read -r line; do
-        line_num=$((line_num+1))
-        
-        # Check if we're entering references section
-        if [[ "$line" =~ ^references:[[:space:]]*$ ]]; then
-            in_references=true
-            continue
-        fi
-        
-        # Check if we're leaving references section
-        if [[ "$in_references" == true ]] && [[ "$line" =~ ^[a-zA-Z] ]]; then
-            in_references=false
-        fi
-        
-        # Parse reference entries
-        if [[ "$in_references" == true ]] && [[ "$line" =~ ^[[:space:]]+-[[:space:]]+(.+)$ ]]; then
-            local ref="${BASH_REMATCH[1]}"
+    # Get all references using yq
+    while IFS= read -r ref; do
+        if [[ -n "$ref" ]] && [[ "$ref" != "null" ]]; then
             log_info "Installing reference: $ref"
             install_lib "$ref" || log_warn "Failed to install reference: $ref"
         fi
-    done < "$config_file"
+    done < <(get_yaml_array "$config_file" "references")
 }
 
 # Install dependencies from local arty.yml
@@ -170,27 +180,9 @@ install_deps() {
     
     log_info "Installing dependencies from $config_file"
     
-    # Install references into local .arty/libs/<DEPENDENCY_NAME>
-    local in_references=false
-    local line_num=0
-    
-    while IFS= read -r line; do
-        line_num=$((line_num+1))
-        
-        # Check if we're entering references section
-        if [[ "$line" =~ ^references:[[:space:]]*$ ]]; then
-            in_references=true
-            continue
-        fi
-        
-        # Check if we're leaving references section
-        if [[ "$in_references" == true ]] && [[ "$line" =~ ^[a-zA-Z] ]]; then
-            in_references=false
-        fi
-        
-        # Parse reference entries
-        if [[ "$in_references" == true ]] && [[ "$line" =~ ^[[:space:]]+-[[:space:]]+(.+)$ ]]; then
-            local ref="${BASH_REMATCH[1]}"
+    # Install references into local .arty/libs/<DEPENDENCY_NAME> using yq
+    while IFS= read -r ref; do
+        if [[ -n "$ref" ]] && [[ "$ref" != "null" ]]; then
             local dep_name=$(get_lib_name "$ref")
             local dep_dir="$local_libs_dir/$dep_name"
             
@@ -220,11 +212,11 @@ install_deps() {
             
             log_success "Dependency '$dep_name' installed successfully"
         fi
-    done < "$config_file"
+    done < <(get_yaml_array "$config_file" "references")
     
-    # Link main script to .arty/bin if defined
-    local main_script=$(grep "^main:" "$config_file" | cut -d':' -f2 | tr -d ' "')
-    if [[ -n "$main_script" ]] && [[ -f "$main_script" ]]; then
+    # Link main script to .arty/bin if defined using yq
+    local main_script=$(get_yaml_field "$config_file" "main")
+    if [[ -n "$main_script" ]] && [[ "$main_script" != "null" ]] && [[ -f "$main_script" ]]; then
         local main_name=$(basename "$main_script" .sh)
         local bin_link="$local_bin_dir/$main_name"
         
@@ -232,7 +224,7 @@ install_deps() {
         ln -sf "../../$main_script" "$bin_link"
         chmod +x "$main_script"
         log_success "Main script linked and made executable"
-    elif [[ -n "$main_script" ]]; then
+    elif [[ -n "$main_script" ]] && [[ "$main_script" != "null" ]]; then
         log_warn "Main script defined but not found: $main_script"
     fi
     
@@ -256,9 +248,12 @@ list_libs() {
             local lib_name=$(basename "$lib_dir")
             local version=""
             
-            # Try to get version from arty.yml
+            # Try to get version from arty.yml using yq
             if [[ -f "$lib_dir/arty.yml" ]]; then
-                version=$(grep "^version:" "$lib_dir/arty.yml" | cut -d':' -f2 | tr -d ' "')
+                version=$(get_yaml_field "$lib_dir/arty.yml" "version")
+                if [[ "$version" == "null" ]] || [[ -z "$version" ]]; then
+                    version=""
+                fi
             fi
             
             printf "  ${GREEN}%-20s${NC} %s\n" "$lib_name" "${version:-(unknown version)}"
@@ -415,48 +410,30 @@ exec_script() {
         return 1
     fi
     
-    # Parse scripts section
-    local in_scripts=false
-    local found_script=false
+    # Get script command using yq
+    local cmd=$(get_yaml_script "$config_file" "$script_name")
     
-    while IFS= read -r line; do
-        # Check if we're entering scripts section
-        if [[ "$line" =~ ^scripts:[[:space:]]*$ ]]; then
-            in_scripts=true
-            continue
-        fi
-        
-        # Check if we're leaving scripts section
-        if [[ "$in_scripts" == true ]] && [[ "$line" =~ ^[a-zA-Z] ]]; then
-            in_scripts=false
-        fi
-        
-        # Parse script entries
-        if [[ "$in_scripts" == true ]] && [[ "$line" =~ ^[[:space:]]+([a-zA-Z0-9_-]+):[[:space:]]*(.+)$ ]]; then
-            local name="${BASH_REMATCH[1]}"
-            local cmd="${BASH_REMATCH[2]}"
-            # Remove quotes if present
-            cmd=$(echo "$cmd" | sed 's/^"\(.*\)"$/\1/' | sed "s/^'\(.*\)'$/\1/")
-            
-            if [[ "$name" == "$script_name" ]]; then
-                found_script=true
-                log_info "Executing script: $script_name"
-                eval "$cmd"
-                return $?
-            fi
-        fi
-    done < "$config_file"
-    
-    if [[ "$found_script" == false ]]; then
+    if [[ -z "$cmd" ]] || [[ "$cmd" == "null" ]]; then
         log_error "Script not found in arty.yml: $script_name"
         log_info "Available scripts:"
-        grep -A 100 "^scripts:" "$config_file" | grep "^  [a-zA-Z]" | sed 's/^  /  - /' | cut -d':' -f1
+        while IFS= read -r name; do
+            if [[ -n "$name" ]]; then
+                echo "  - $name"
+            fi
+        done < <(list_yaml_scripts "$config_file")
         return 1
     fi
+    
+    log_info "Executing script: $script_name"
+    eval "$cmd"
+    return $?
 }
 
 # Main function
 main() {
+    # Check for yq availability first
+    check_yq
+    
     if [[ $# -eq 0 ]]; then
         show_usage
         exit 0

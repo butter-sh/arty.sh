@@ -10,6 +10,31 @@ A bash library repository management system built with arty.sh.
 - 🌐 Curl-installable for easy distribution
 - 📋 Package-like configuration with `arty.yml`
 
+## System Requirements
+
+- Bash 4.0 or higher
+- Git
+- `yq` - YAML processor (https://github.com/mikefarah/yq)
+
+### Installing yq
+
+**On macOS:**
+```bash
+brew install yq
+```
+
+**On Linux:**
+```bash
+# Download latest release
+sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+sudo chmod +x /usr/local/bin/yq
+```
+
+**On Debian/Ubuntu:**
+```bash
+sudo apt-get install yq
+```
+
 ## Installation
 
 ### Quick Install (curl)
