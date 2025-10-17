@@ -146,13 +146,13 @@ install_lib() {
             if [[ -f "$main_file" ]]; then
                 local local_bin_dir=".arty/bin"
                 mkdir -p "$local_bin_dir"
-                local $lib_name_stripped="$(basename $local_bin_dir/$main_file .sh)"
+                local $lib_name_stripped="$(basename $main_script .sh)"
                 local bin_link="$local_bin_dir/$lib_name_stripped"
                 
                 log_info "Linking main script: $main_script -> $bin_link"
-                ln -sf "$lib_dir/$main_script" "$bin_link"
+                ln -sf "../libs/$lib_name/$main_script" "$bin_link"
                 chmod +x "$main_file"
-                log_success "Main script linked to $bin_link"
+                log_success "Main script linked to .arty/bin/$lib_name_stripped"
             fi
         fi
         
@@ -176,6 +176,7 @@ install_references() {
     
     # Get all references using yq
     while IFS= read -r ref; do
+				echo $ref
         if [[ -n "$ref" ]] && [[ "$ref" != "null" ]]; then
             log_info "Installing reference: $ref"
             install_lib "$ref" || log_warn "Failed to install reference: $ref"
@@ -437,9 +438,9 @@ main() {
     case "$command" in
         install)
             if [[ $# -eq 0 ]]; then
-                install_references
+              	install_references
 						else
-            	install_lib "$@"
+            		install_lib "$@"
             fi
             ;;
         deps)
