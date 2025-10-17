@@ -36,7 +36,7 @@ jobs:
 
     - name: Generate documentation
       run: |
-        arty exec leaf --logo ./icon.svg -o ./docs
+        arty exec leaf . --logo ./icon.svg -o ./docs
 
     - name: Setup Pages
       uses: actions/configure-pages@v4
