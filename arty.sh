@@ -129,7 +129,7 @@ install_references() {
     local line_num=0
     
     while IFS= read -r line; do
-        ((line_num++))
+        line_num=$((line_num+1))
         
         # Check if we're entering references section
         if [[ "$line" =~ ^references:[[:space:]]*$ ]]; then
@@ -299,7 +299,7 @@ ENVIRONMENT:
 
 INSTALLATION:
     # Install arty.sh globally
-    curl -sSL https://raw.githubusercontent.com/user/arty/main/arty.sh | sudo tee /usr/local/bin/arty > /dev/null
+    curl -sSL https://raw.githubusercontent.com/butter-sh/arty.sh/main/arty.sh | sudo tee /usr/local/bin/arty > /dev/null
     sudo chmod +x /usr/local/bin/arty
 
 EOF
