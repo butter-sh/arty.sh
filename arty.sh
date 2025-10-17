@@ -292,10 +292,11 @@ exec_lib() {
     local lib_name="$1"
     shift  # Remove lib_name from arguments, rest are passed to the script
     
-    local bin_path=".arty/bin/$lib_name"
+		local lib_name_stripped="$(basename $lib_name .sh)"
+    local bin_path=".arty/bin/$lib_name_stripped"
     
     if [[ ! -f "$bin_path" ]]; then
-        log_error "Library executable not found: $lib_name"
+        log_error "Library executable not found: $lib_name_stripped"
         log_info "Make sure the library is installed with 'arty deps' or 'arty install'"
         log_info "Available executables:"
         if [[ -d ".arty/bin" ]]; then
