@@ -387,7 +387,7 @@ ENVIRONMENT:
 
 INSTALLATION:
     # Install arty.sh globally
-    curl -sSL https://raw.githubusercontent.com/butter-sh/arty.sh/main/arty.sh | sudo tee /usr/local/bin/arty > /dev/null
+    curl -sSL https://raw.githubusercontent.com/{{organization_name}}/arty.sh/main/arty.sh | sudo tee /usr/local/bin/arty > /dev/null
     sudo chmod +x /usr/local/bin/arty
 
 EOF

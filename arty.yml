@@ -4,11 +4,9 @@ description: "A bash library repository management system"
 author: ""
 license: "MIT"
 
-# Dependencies from other arty.sh repositories
 references:
-  # Example references:
-  # - https://github.com/username/bash-utils.git
-  # - https://github.com/username/test-framework.git
+- https://github.com/butter-sh/leaf.sh.git
+- https://github.com/butter-sh/judge.sh.git
 
 # Entry point script
 main: "arty.sh"
