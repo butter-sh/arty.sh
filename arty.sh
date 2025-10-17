@@ -357,7 +357,7 @@ exec_lib() {
         if [[ -d "$ARTY_BIN_DIR" ]]; then
             for exec_file in $ARTY_BIN_DIR/*; do
                 if [[ -f "$exec_file" ]]; then
-                    echo "  - $(basename "$exec_file")"
+                    echo "  -- $(basename "$exec_file")"
                 fi
             done
         else
