@@ -161,76 +161,6 @@ install_references() {
     done < <(get_yaml_array "$config_file" "references")
 }
 
-# Install dependencies from local arty.yml
-install_deps() {
-    local config_file="${1:-$ARTY_CONFIG_FILE}"
-    
-    if [[ ! -f "$config_file" ]]; then
-        log_error "Config file not found: $config_file"
-        return 1
-    fi
-    
-    # Create local .arty folder structure
-    local local_arty_dir=".arty"
-    local local_bin_dir="$local_arty_dir/bin"
-    local local_libs_dir="$local_arty_dir/libs"
-    
-    log_info "Creating local arty structure"
-    mkdir -p "$local_bin_dir" "$local_libs_dir"
-    
-    log_info "Installing dependencies from $config_file"
-    
-    # Install references into local .arty/libs/<DEPENDENCY_NAME> using yq
-    while IFS= read -r ref; do
-        if [[ -n "$ref" ]] && [[ "$ref" != "null" ]]; then
-            local dep_name=$(get_lib_name "$ref")
-            local dep_dir="$local_libs_dir/$dep_name"
-            
-            log_info "Installing dependency: $dep_name"
-            
-            # Clone or update dependency
-            if [[ -d "$dep_dir" ]]; then
-                log_info "Dependency already exists, updating..."
-                (cd "$dep_dir" && git pull) || {
-                    log_error "Failed to update dependency: $dep_name"
-                    continue
-                }
-            else
-                git clone "$ref" "$dep_dir" || {
-                    log_error "Failed to clone dependency: $dep_name"
-                    continue
-                }
-            fi
-            
-            # Run setup hook if exists
-            if [[ -f "$dep_dir/setup.sh" ]]; then
-                log_info "Running setup hook for $dep_name..."
-                (cd "$dep_dir" && bash setup.sh) || {
-                    log_warn "Setup hook failed for $dep_name, continuing anyway..."
-                }
-            fi
-            
-            log_success "Dependency '$dep_name' installed successfully"
-        fi
-    done < <(get_yaml_array "$config_file" "references")
-    
-    # Link main script to .arty/bin if defined using yq
-    local main_script=$(get_yaml_field "$config_file" "main")
-    if [[ -n "$main_script" ]] && [[ "$main_script" != "null" ]] && [[ -f "$main_script" ]]; then
-        local main_name=$(basename "$main_script" .sh)
-        local bin_link="$local_bin_dir/$main_name"
-        
-        log_info "Linking main script: $main_script -> $bin_link"
-        ln -sf "../../$main_script" "$bin_link"
-        chmod +x "$main_script"
-        log_success "Main script linked and made executable"
-    elif [[ -n "$main_script" ]] && [[ "$main_script" != "null" ]]; then
-        log_warn "Main script defined but not found: $main_script"
-    fi
-    
-    log_success "All dependencies installed"
-}
-
 # List installed libraries
 list_libs() {
     init_arty
@@ -445,13 +375,13 @@ main() {
     case "$command" in
         install)
             if [[ $# -eq 0 ]]; then
-                log_error "Repository URL required"
-                exit 1
-            fi
-            install_lib "$@"
+                install_libs
+            else
+            	install_lib "$@"
+						fi
             ;;
         deps)
-            install_deps "$@"
+            install_libs
             ;;
         list|ls)
             list_libs
