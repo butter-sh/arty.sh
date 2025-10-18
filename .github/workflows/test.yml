@@ -39,4 +39,4 @@ jobs:
 
     - name: Run Tests
       run: |
-        arty test
+        FORCE_COLOR=0 arty test
