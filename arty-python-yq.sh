@@ -13,6 +13,7 @@ ARTY_BIN_DIR="$ARTY_HOME/bin"
 ARTY_CONFIG_FILE="${ARTY_CONFIG_FILE:-arty.yml}"
 
 # Colors for output - only use colors if output is to a terminal or if FORCE_COLOR is set
+export FORCE_COLOR=${FORCE_COLOR:-}
 if [[ -z "$FORCE_COLOR" ]]; then
 		if [[ "$FORCE_COLOR" = "1" ]]; then
 			export RED='\033[0;31m'
