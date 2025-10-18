@@ -1,0 +1,33 @@
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  Dependency Management Tests[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+[0;32m[PASS][0m Library should be marked as installing
+[0;32m[PASS][0m Library should be unmarked after unmark_installing
+[0;32m[PASS][0m Library should not be marked after unmarking
+[0;32m[PASS][0m Untracked library should not be marked as installing
+[0;32m[PASS][0m All three libraries should be tracked
+[0;32m[PASS][0m Two libraries should remain after unmarking one
+[0;32m[PASS][0m Existing library should be detected as installed
+[0;32m[PASS][0m Non-existent library should not be detected as installed
+[0;32m[PASS][0m All variations should normalize to same ID
+[0;32m[PASS][0m Normalized ID should be lowercase without .git
+[0;32m[PASS][0m Should extract library name from https URL with .git
+[0;32m[PASS][0m Should extract library name from https URL without .git
+[0;32m[PASS][0m Should extract library name from SSH URL
+[0;32m[PASS][0m Should extract library name from GitLab URL
+[0;32m[PASS][0m Should detect when library is already being installed
+[0;32m[PASS][0m Should clear after unmarking
+[0;32m[PASS][0m Should not detect circular after clearing
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  TEST SUMMARY[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+  Total Tests:  17
+  [0;32mPassed:       17[0m
+  [0;31mFailed:       0[0m
+  Pass Rate:    100%
+
+[0;32m✓ All tests passed![0m

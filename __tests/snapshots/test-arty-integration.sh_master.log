@@ -1,0 +1,97 @@
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  Integration Tests[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+[0;34m[INFO][0m Initializing new arty project: my-project
+[0;34m[INFO][0m Creating project structure
+[0;32m[SUCCESS][0m Created /tmp/tmp.sl0PW5xBgu/arty.yml
+[0;32m[SUCCESS][0m Created .arty/ folder structure
+[0;32m[PASS][0m Config file should be created
+[0;32m[PASS][0m ARTY directory should be created
+[0;32m[PASS][0m Bin directory should be created
+[0;32m[PASS][0m Libs directory should be created
+[0;32m[PASS][0m Config should have project name
+[0;32m[PASS][0m Config should have version
+[0;32m[PASS][0m Config should have scripts section
+[0;34m[INFO][0m Executing script: setup
+[0;32m[PASS][0m Setup should create build directory
+[0;32m[PASS][0m Setup should create log file
+[0;34m[INFO][0m Executing script: build
+[0;32m[PASS][0m Build should create log file
+[0;32m[PASS][0m Test should read setup log
+[0;32m[PASS][0m Test should read build log
+[0;32m[PASS][0m Test should complete
+[0;32m[PASS][0m Library should be listed
+[0;32m[PASS][0m Version should be shown
+[0;32m[PASS][0m Library should execute
+[0;34m[INFO][0m Removing library: mock-lib
+[0;32m[SUCCESS][0m Library removed
+[0;32m[PASS][0m Library should be removed
+[0;34m[INFO][0m Executing script: clean
+Cleaned
+[0;34m[INFO][0m Executing script: prepare
+[0;34m[INFO][0m Executing script: compile
+[0;32m[PASS][0m Should show prepared status
+[0;32m[PASS][0m Should show compiled status
+[0;32m[PASS][0m Should show packaged status
+[0;34m[INFO][0m Executing script: fail
+[0;32m[PASS][0m Fail script should return error
+[0;32m[PASS][0m Recovery script should work
+[0;32m[PASS][0m Should run deps
+[0;32m[PASS][0m Should run build
+[0;32m[PASS][0m Should complete all steps
+[0;32m[PASS][0m Should set environment
+[0;32m[PASS][0m New script should have default env
+[0;34m[INFO][0m Executing script: create
+[0;32m[PASS][0m File should be created
+[0;34m[INFO][0m Executing script: append
+[0;32m[PASS][0m Should have initial content
+[0;32m[PASS][0m Should have appended content
+[0;34m[INFO][0m Executing script: scaffold
+[0;32m[PASS][0m src directory should exist
+[0;32m[PASS][0m components directory should exist
+[0;32m[PASS][0m utils directory should exist
+[0;32m[PASS][0m tests directory should exist
+[0;32m[PASS][0m .gitkeep should exist
+[0;32m[PASS][0m Verify should show components
+[0;32m[PASS][0m Check should fail without config
+[0;34m[INFO][0m Executing script: create
+[0;32m[PASS][0m Check should pass with config
+[0;34m[INFO][0m Executing script: generate
+[0;32m[PASS][0m Data file should be generated
+[0;32m[PASS][0m Should find Line 5
+[0;32m[PASS][0m Should count 10 lines
+[0;34m[INFO][0m Executing script: clean
+Cleaned
+[0;32m[PASS][0m Data file should be cleaned
+[0;32m[PASS][0m Should show usage
+[0;32m[PASS][0m Should show commands
+[0;32m[PASS][0m Should show usage
+[0;32m[PASS][0m Should show commands
+[0;32m[PASS][0m Should show usage
+[0;32m[PASS][0m Should show commands
+[0;32m[PASS][0m Should show usage
+[0;32m[PASS][0m Should show commands
+[0;34m[INFO][0m Initializing new arty project: complete-workflow
+[0;34m[INFO][0m Creating project structure
+[0;32m[SUCCESS][0m Created /tmp/tmp.mktKkRUxnO/arty.yml
+[0;32m[SUCCESS][0m Created .arty/ folder structure
+[0;34m[INFO][0m Executing script: build
+[0;34m[INFO][0m Executing script: test
+All tests passed
+[0;32m[PASS][0m Should show build output
+[0;32m[PASS][0m Should deploy
+[0;32m[PASS][0m Dist directory should exist
+[0;32m[PASS][0m Build artifact should exist
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  TEST SUMMARY[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+  Total Tests:  54
+  [0;32mPassed:       54[0m
+  [0;31mFailed:       0[0m
+  Pass Rate:    100%
+
+[0;32m✓ All tests passed![0m

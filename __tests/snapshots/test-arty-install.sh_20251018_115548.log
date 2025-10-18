@@ -1,0 +1,32 @@
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  Install Functionality Tests[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+[0;32m[PASS][0m Should create ARTY_HOME directory
+[0;32m[PASS][0m Should create libs directory
+[0;32m[PASS][0m Should create bin directory
+[0;32m[SUCCESS][0m Initialized arty at /tmp/tmp.3yErm42xJB/.arty
+[0;32m[PASS][0m Should succeed with empty references
+[0;32m[PASS][0m Should report config file not found
+[0;32m[PASS][0m Should create libs directory
+[0;32m[SUCCESS][0m Initialized arty at /tmp/tmp.tTHBTIpqP5/.arty
+[0;32m[PASS][0m Install command should succeed
+[0;32m[PASS][0m Should extract my-lib from URL
+[0;32m[PASS][0m Should extract another-lib from URL
+[0;32m[PASS][0m Both URLs should normalize to same ID
+[0;32m[PASS][0m Normalized ID should contain my-lib
+[0;32m[PASS][0m Should show no libraries message
+[0;34m[INFO][0m No libraries installed
+[0;32m[PASS][0m ls alias should work without errors
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  TEST SUMMARY[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+  Total Tests:  13
+  [0;32mPassed:       13[0m
+  [0;31mFailed:       0[0m
+  Pass Rate:    100%
+
+[0;32m✓ All tests passed![0m

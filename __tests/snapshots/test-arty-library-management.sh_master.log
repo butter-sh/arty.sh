@@ -1,0 +1,51 @@
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  Library Management Tests[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+[0;32m[PASS][0m Should show no libraries message
+[0;32m[PASS][0m Should list lib1
+[0;32m[PASS][0m Should list lib2
+[0;32m[PASS][0m Should list lib3
+[0;32m[PASS][0m Should have header
+[0;32m[PASS][0m Should list library name
+[0;32m[PASS][0m Should show version number
+[0;32m[PASS][0m Should list library even without config
+[0;32m[PASS][0m Should show unknown version
+[0;32m[PASS][0m Should still list library with bad config
+[0;32m[PASS][0m list should show library
+[0;32m[PASS][0m ls should show library
+[0;32m[PASS][0m Library should exist before removal
+[0;32m[PASS][0m Should confirm removal
+[0;32m[PASS][0m Library directory should be deleted
+[0;32m[PASS][0m Should return error code
+[0;32m[PASS][0m Should report library not found
+[0;32m[PASS][0m rm alias should work
+[0;32m[PASS][0m Library should be deleted
+[0;34m[INFO][0m Removing library: complex-lib
+[0;32m[SUCCESS][0m Library removed
+[0;32m[PASS][0m Complex library tree should be deleted
+[0;32m[PASS][0m Should execute function from sourced library
+[0;32m[PASS][0m Should access variable from sourced library
+[0;32m[PASS][0m Should load custom file
+[0;32m[PASS][0m Should return error code
+[0;32m[PASS][0m Should report file not found
+[0;32m[PASS][0m Should return error code
+[0;32m[PASS][0m Should list first library
+[0;32m[PASS][0m Should list middle library
+[0;32m[PASS][0m Should list last library
+[0;32m[PASS][0m Should list short name
+[0;32m[PASS][0m Should list long name
+[0;32m[PASS][0m Should show first version
+[0;32m[PASS][0m Should show second version
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  TEST SUMMARY[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+  Total Tests:  33
+  [0;32mPassed:       33[0m
+  [0;31mFailed:       0[0m
+  Pass Rate:    100%
+
+[0;32m✓ All tests passed![0m

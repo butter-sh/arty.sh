@@ -1,0 +1,55 @@
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  Logging and Output Tests[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+[0;32m[PASS][0m Should contain INFO label
+[0;32m[PASS][0m Should contain info message
+[0;32m[PASS][0m Should contain SUCCESS label
+[0;32m[PASS][0m Should contain success message
+[0;32m[PASS][0m Should contain WARN label
+[0;32m[PASS][0m Should contain warning message
+[0;32m[PASS][0m Should contain ERROR label
+[0;32m[PASS][0m Should contain error message
+[0;32m[PASS][0m Should complete without errors
+[0;32m[PASS][0m Should handle special characters
+[0;32m[PASS][0m Should handle double quotes
+[0;32m[PASS][0m Should handle single quotes
+[0;32m[PASS][0m Should handle long messages without crashing
+[0;32m[PASS][0m Should handle multiline message - line 1
+[0;32m[PASS][0m Info should output to stderr
+[0;32m[PASS][0m Error should output to stderr
+[0;32m[PASS][0m Should handle unicode characters
+[0;32m[PASS][0m Should handle backticks
+[0;32m[PASS][0m Should expand variables
+[0;32m[PASS][0m Info format should be present
+[0;32m[PASS][0m Success format should be present
+[0;32m[PASS][0m Warn format should be present
+[0;32m[PASS][0m Error format should be present
+[0;32m[PASS][0m Should have USAGE section
+[0;32m[PASS][0m Should have COMMANDS section
+[0;32m[PASS][0m Should have EXAMPLES section
+[0;32m[PASS][0m Should document install command
+[0;32m[PASS][0m Should document deps command
+[0;32m[PASS][0m Should document list command
+[0;32m[PASS][0m Should document remove command
+[0;32m[PASS][0m Should document init command
+[0;32m[PASS][0m Should document exec command
+[0;32m[PASS][0m Should document source command
+[0;32m[PASS][0m Should include project structure section
+[0;32m[PASS][0m Should mention .arty directory
+[0;32m[PASS][0m Should mention libs directory
+[0;32m[PASS][0m Should mention bin directory
+[0;32m[PASS][0m Should include environment section
+[0;32m[PASS][0m Should mention ARTY_HOME variable
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  TEST SUMMARY[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+  Total Tests:  39
+  [0;32mPassed:       39[0m
+  [0;31mFailed:       0[0m
+  Pass Rate:    100%
+
+[0;32m✓ All tests passed![0m

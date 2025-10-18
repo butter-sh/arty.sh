@@ -1,0 +1,45 @@
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  Error Handling and Edge Cases Tests[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+[0;32m[PASS][0m Should return error code for missing config
+[0;32m[PASS][0m Should report missing config file
+[0;32m[PASS][0m Should fail on corrupted YAML
+[0;32m[PASS][0m Should handle empty YAML file
+[0;32m[PASS][0m Should handle malformed scripts section
+[0;32m[PASS][0m Should execute long script successfully
+[0;32m[PASS][0m Long script should execute
+[0;32m[PASS][0m Script with special characters should execute
+[0;32m[PASS][0m Should return error for non-existent script
+[0;32m[PASS][0m Should report script not found
+[0;32m[PASS][0m Should list available scripts
+[0;32m[PASS][0m Should return error when removing non-existent library
+[0;32m[PASS][0m Should report library not found
+[0;32m[PASS][0m Should return error when config already exists
+[0;32m[PASS][0m Should report that config already exists
+[0;32m[PASS][0m Original config should not be overwritten
+[0;32m[PASS][0m Should return error when exec called without library name
+[0;32m[PASS][0m Should report library name required
+[0;32m[PASS][0m Should return error when source called without library name
+[0;32m[PASS][0m Should report library name required
+[0;32m[PASS][0m Should return error when remove called without library name
+[0;32m[PASS][0m Should report library name required
+[0;32m[PASS][0m Should fail for null script value
+[0;32m[PASS][0m Should return error for non-existent script
+[0;32m[PASS][0m Should report script not found
+[0;32m[PASS][0m Should handle minimal YAML file
+[0;32m[PASS][0m Permission test completed
+[0;32m[PASS][0m First script should set variable
+[0;32m[PASS][0m Second script should not see first script's variable
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  TEST SUMMARY[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+  Total Tests:  29
+  [0;32mPassed:       29[0m
+  [0;31mFailed:       0[0m
+  Pass Rate:    100%
+
+[0;32m✓ All tests passed![0m

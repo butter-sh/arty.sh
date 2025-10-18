@@ -40,14 +40,14 @@ sudo apt-get install yq
 ### Quick Install (curl)
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/{{organization_name}}/arty.sh/main/arty.sh | sudo tee /usr/local/bin/arty > /dev/null
+curl -sSL https://raw.githubusercontent.com/butter-sh/arty.sh/main/arty.sh | sudo tee /usr/local/bin/arty > /dev/null
 sudo chmod +x /usr/local/bin/arty
 ```
 
 ### Manual Install
 
 ```bash
-git clone https://github.com/{{organization_name}}/arty.sh.git
+git clone https://github.com/butter-sh/arty.sh.git
 cd arty.sh
 sudo cp arty.sh /usr/local/bin/arty
 sudo chmod +x /usr/local/bin/arty
@@ -66,7 +66,7 @@ This creates an `arty.yml` configuration file.
 ### Install a Library
 
 ```bash
-arty install https://github.com/{{organization_name}}/{{demo_project_name}}.git
+arty install https://github.com/butter-sh/kompose.sh.git
 ```
 
 ### Install with Custom Name

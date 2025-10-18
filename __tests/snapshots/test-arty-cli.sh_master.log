@@ -1,0 +1,26 @@
+[0;32m[PASS][0m Should show usage
+[0;32m[PASS][0m Should show commands
+[0;32m[PASS][0m Should show usage
+[0;32m[PASS][0m Should show commands
+[0;32m[PASS][0m Should show usage
+[0;32m[PASS][0m Should show usage
+[0;32m[PASS][0m Unknown command should fail
+[0;32m[PASS][0m Should require library name
+[0;32m[PASS][0m Should require library name
+[0;32m[PASS][0m Should not found
+[0;32m[PASS][0m Should require library name
+[0;32m[PASS][0m Should show install
+[0;32m[PASS][0m Should show deps
+[0;32m[PASS][0m Should show list
+[0;32m[PASS][0m Should show remove
+[0;32m[PASS][0m Should show init
+[0;32m[PASS][0m Should show source
+[0;32m[PASS][0m Should show exec
+[0;32m[PASS][0m Should show help
+[0;32m[PASS][0m Should show examples
+[0;32m[PASS][0m Should show environment
+[0;32m[PASS][0m Should show arty home
+[0;32m[PASS][0m Should show project structure
+[0;32m[PASS][0m Should show libraries
+[0;32m[PASS][0m Should show libraries
+[0;32m[PASS][0m Case sensitive command should fail

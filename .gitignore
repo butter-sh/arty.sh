@@ -1,6 +1,5 @@
 # arty.sh specific
 .arty/
-*.log
 
 # OS files
 .DS_Store

@@ -1,0 +1,28 @@
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  YAML Parsing Tests[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+[0;32m[PASS][0m Should retrieve project name field
+[0;32m[PASS][0m Should retrieve version field
+[0;32m[PASS][0m Should handle missing file gracefully
+[0;32m[PASS][0m Should retrieve first reference
+[0;32m[PASS][0m Should retrieve second reference
+[0;32m[PASS][0m Should retrieve script command
+[0;32m[PASS][0m Should return null for missing script
+[0;32m[PASS][0m Should list build script
+[0;32m[PASS][0m Should list test script
+[0;32m[PASS][0m Should list deploy script
+[0;32m[PASS][0m Should handle empty arrays
+[0;32m[PASS][0m Should retrieve nested field value
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  TEST SUMMARY[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+  Total Tests:  12
+  [0;32mPassed:       12[0m
+  [0;31mFailed:       0[0m
+  Pass Rate:    100%
+
+[0;32m✓ All tests passed![0m

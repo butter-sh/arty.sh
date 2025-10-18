@@ -1,0 +1,40 @@
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  Script Execution Advanced Tests[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+[0;32m[PASS][0m Simple script should execute and output text
+[0;32m[PASS][0m Script with environment variables should execute
+[0;32m[PASS][0m First command should execute
+[0;32m[PASS][0m Second command should execute
+[0;32m[PASS][0m Third command should execute
+[0;32m[PASS][0m Multiline script line 1 should execute
+[0;32m[PASS][0m Multiline script line 2 should execute
+[0;32m[PASS][0m Multiline script line 3 should execute
+[0;32m[PASS][0m Script should create and read file
+[0;32m[PASS][0m File should exist after script execution
+[0;32m[PASS][0m Conditional script should execute true branch
+[0;32m[PASS][0m Conditional script should not execute false branch
+[0;32m[PASS][0m Loop should execute iteration 1
+[0;32m[PASS][0m Loop should execute iteration 2
+[0;32m[PASS][0m Loop should execute iteration 3
+[0;32m[PASS][0m Script with error should return non-zero exit code
+[0;32m[PASS][0m Script with function definition should execute
+[0;32m[PASS][0m Arithmetic operation should execute correctly
+[0;32m[PASS][0m Command substitution should work
+[0;32m[PASS][0m Pipe operations should work
+[0;32m[PASS][0m Script should output current directory
+[0;32m[PASS][0m Variable assignment should work
+[0;32m[PASS][0m Heredoc should work - line 1
+[0;32m[PASS][0m Heredoc should work - line 2
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  TEST SUMMARY[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+  Total Tests:  24
+  [0;32mPassed:       24[0m
+  [0;31mFailed:       0[0m
+  Pass Rate:    100%
+
+[0;32m✓ All tests passed![0m

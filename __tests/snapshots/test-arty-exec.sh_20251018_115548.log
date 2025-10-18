@@ -1,0 +1,32 @@
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  Script Execution Tests[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+[0;32m[PASS][0m Script should execute and output message
+[0;32m[PASS][0m Should report script not found
+[0;32m[PASS][0m Should show available scripts
+[0;32m[PASS][0m Should list build script
+[0;32m[PASS][0m Should list test script
+[0;32m[PASS][0m Should list deploy script
+[0;32m[PASS][0m Should report config file not found
+[0;32m[PASS][0m Should execute part 1
+[0;32m[PASS][0m Should execute part 2
+[0;32m[PASS][0m Should execute part 3
+[0;32m[PASS][0m Should expand variables in script
+[0;32m[PASS][0m Exec should require library name
+[0;32m[PASS][0m Should report library not found
+[0;32m[PASS][0m Should show available executables
+[0;32m[PASS][0m Should list tool1
+[0;32m[PASS][0m Should list tool2
+
+[0;36m═══════════════════════════════════════════════════════[0m
+[0;36m  TEST SUMMARY[0m
+[0;36m═══════════════════════════════════════════════════════[0m
+
+  Total Tests:  16
+  [0;32mPassed:       16[0m
+  [0;31mFailed:       0[0m
+  Pass Rate:    100%
+
+[0;32m✓ All tests passed![0m

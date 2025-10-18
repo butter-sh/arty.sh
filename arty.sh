@@ -12,12 +12,20 @@ ARTY_LIBS_DIR="$ARTY_HOME/libs"
 ARTY_BIN_DIR="$ARTY_HOME/bin"
 ARTY_CONFIG_FILE="${ARTY_CONFIG_FILE:-arty.yml}"
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+# Colors - only use colors if output is to a terminal or if FORCE_COLOR is set
+if [[ -n "${FORCE_COLOR:-}" ]] || [[ -t 2 ]]; then
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'
+    NC='\033[0m'
+else
+    RED=''
+    GREEN=''
+    YELLOW=''
+    BLUE=''
+    NC=''
+fi
 
 # Global array to track installation stack (prevent circular dependencies)
 declare -g -A ARTY_INSTALL_STACK
@@ -67,6 +75,11 @@ get_yaml_field() {
         return 1
     fi
     
+    # Check if file has valid YAML - yq will exit with error on invalid YAML
+    if ! yq eval '.' "$file" >/dev/null 2>&1; then
+        return 1
+    fi
+    
     yq eval ".$field" "$file" 2>/dev/null || echo ""
 }
 
@@ -76,6 +89,11 @@ get_yaml_array() {
     local field="$2"
     
     if [[ ! -f "$file" ]]; then
+        return 1
+    fi
+    
+    # Check if file has valid YAML - yq will exit with error on invalid YAML
+    if ! yq eval '.' "$file" >/dev/null 2>&1; then
         return 1
     fi
     
@@ -229,6 +247,15 @@ install_references() {
         return 1
     fi
     
+    # Check if YAML is valid by trying to read it
+    if ! yq eval '.' "$config_file" >/dev/null 2>&1; then
+        log_error "Invalid YAML in config file: $config_file"
+        return 1
+    fi
+    
+    # Initialize arty directory structure first
+    init_arty
+    
     # Get all references using yq
     while IFS= read -r ref; do
         if [[ -n "$ref" ]] && [[ "$ref" != "null" ]]; then
@@ -296,7 +323,7 @@ init_project() {
     log_info "Initializing new arty project: $project_name"
     
     # Create local .arty folder structure
-    local local_arty_dir="$ARTY_BIN_DIR/.arty"
+    local local_arty_dir=".arty"
     local local_bin_dir="$local_arty_dir/bin"
     local local_libs_dir="$local_arty_dir/libs"
     
@@ -441,7 +468,7 @@ ENVIRONMENT:
 
 INSTALLATION:
     # Install arty.sh globally
-    curl -sSL https://raw.githubusercontent.com/{{organization_name}}/arty.sh/main/arty.sh | sudo tee /usr/local/bin/arty > /dev/null
+    curl -sSL https://raw.githubusercontent.com/butter-sh/arty.sh/main/arty.sh | sudo tee /usr/local/bin/arty > /dev/null
     sudo chmod +x /usr/local/bin/arty
 
 EOF
@@ -534,13 +561,7 @@ main() {
             ;;
         *)
             # Try to execute as a script from arty.yml
-            if [[ -f "$ARTY_CONFIG_FILE" ]]; then
-                exec_script "$command" "$@"
-            else
-                log_error "Unknown command: $command"
-                show_usage
-                exit 1
-            fi
+            exec_script "$command" "$@"
             ;;
     esac
 }
