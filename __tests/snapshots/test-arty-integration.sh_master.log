@@ -3,10 +3,10 @@
 [0;36m  Integration Tests[0m
 [0;36m═══════════════════════════════════════════════════════[0m
 
-[0;34m[INFO][0m Initializing new arty project: my-project
-[0;34m[INFO][0m Creating project structure
-[0;32m[SUCCESS][0m Created /tmp/tmp.sl0PW5xBgu/arty.yml
-[0;32m[SUCCESS][0m Created .arty/ folder structure
+[INFO] Initializing new arty project: my-project
+[INFO] Creating project structure
+[SUCCESS] Created /tmp/tmp.hG6mUzg206/arty.yml
+[SUCCESS] Created .arty/ folder structure
 [0;32m[PASS][0m Config file should be created
 [0;32m[PASS][0m ARTY directory should be created
 [0;32m[PASS][0m Bin directory should be created
@@ -14,10 +14,10 @@
 [0;32m[PASS][0m Config should have project name
 [0;32m[PASS][0m Config should have version
 [0;32m[PASS][0m Config should have scripts section
-[0;34m[INFO][0m Executing script: setup
+[INFO] Executing script: setup
 [0;32m[PASS][0m Setup should create build directory
 [0;32m[PASS][0m Setup should create log file
-[0;34m[INFO][0m Executing script: build
+[INFO] Executing script: build
 [0;32m[PASS][0m Build should create log file
 [0;32m[PASS][0m Test should read setup log
 [0;32m[PASS][0m Test should read build log
@@ -25,17 +25,17 @@
 [0;32m[PASS][0m Library should be listed
 [0;32m[PASS][0m Version should be shown
 [0;32m[PASS][0m Library should execute
-[0;34m[INFO][0m Removing library: mock-lib
-[0;32m[SUCCESS][0m Library removed
+[INFO] Removing library: mock-lib
+[SUCCESS] Library removed
 [0;32m[PASS][0m Library should be removed
-[0;34m[INFO][0m Executing script: clean
+[INFO] Executing script: clean
 Cleaned
-[0;34m[INFO][0m Executing script: prepare
-[0;34m[INFO][0m Executing script: compile
+[INFO] Executing script: prepare
+[INFO] Executing script: compile
 [0;32m[PASS][0m Should show prepared status
 [0;32m[PASS][0m Should show compiled status
 [0;32m[PASS][0m Should show packaged status
-[0;34m[INFO][0m Executing script: fail
+[INFO] Executing script: fail
 [0;32m[PASS][0m Fail script should return error
 [0;32m[PASS][0m Recovery script should work
 [0;32m[PASS][0m Should run deps
@@ -43,12 +43,12 @@ Cleaned
 [0;32m[PASS][0m Should complete all steps
 [0;32m[PASS][0m Should set environment
 [0;32m[PASS][0m New script should have default env
-[0;34m[INFO][0m Executing script: create
+[INFO] Executing script: create
 [0;32m[PASS][0m File should be created
-[0;34m[INFO][0m Executing script: append
+[INFO] Executing script: append
 [0;32m[PASS][0m Should have initial content
 [0;32m[PASS][0m Should have appended content
-[0;34m[INFO][0m Executing script: scaffold
+[INFO] Executing script: scaffold
 [0;32m[PASS][0m src directory should exist
 [0;32m[PASS][0m components directory should exist
 [0;32m[PASS][0m utils directory should exist
@@ -56,13 +56,13 @@ Cleaned
 [0;32m[PASS][0m .gitkeep should exist
 [0;32m[PASS][0m Verify should show components
 [0;32m[PASS][0m Check should fail without config
-[0;34m[INFO][0m Executing script: create
+[INFO] Executing script: create
 [0;32m[PASS][0m Check should pass with config
-[0;34m[INFO][0m Executing script: generate
+[INFO] Executing script: generate
 [0;32m[PASS][0m Data file should be generated
 [0;32m[PASS][0m Should find Line 5
 [0;32m[PASS][0m Should count 10 lines
-[0;34m[INFO][0m Executing script: clean
+[INFO] Executing script: clean
 Cleaned
 [0;32m[PASS][0m Data file should be cleaned
 [0;32m[PASS][0m Should show usage
@@ -73,12 +73,12 @@ Cleaned
 [0;32m[PASS][0m Should show commands
 [0;32m[PASS][0m Should show usage
 [0;32m[PASS][0m Should show commands
-[0;34m[INFO][0m Initializing new arty project: complete-workflow
-[0;34m[INFO][0m Creating project structure
-[0;32m[SUCCESS][0m Created /tmp/tmp.mktKkRUxnO/arty.yml
-[0;32m[SUCCESS][0m Created .arty/ folder structure
-[0;34m[INFO][0m Executing script: build
-[0;34m[INFO][0m Executing script: test
+[INFO] Initializing new arty project: complete-workflow
+[INFO] Creating project structure
+[SUCCESS] Created /tmp/tmp.biajPkMI3F/arty.yml
+[SUCCESS] Created .arty/ folder structure
+[INFO] Executing script: build
+[INFO] Executing script: test
 All tests passed
 [0;32m[PASS][0m Should show build output
 [0;32m[PASS][0m Should deploy

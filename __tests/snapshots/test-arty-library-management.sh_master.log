@@ -22,8 +22,8 @@
 [0;32m[PASS][0m Should report library not found
 [0;32m[PASS][0m rm alias should work
 [0;32m[PASS][0m Library should be deleted
-[0;34m[INFO][0m Removing library: complex-lib
-[0;32m[SUCCESS][0m Library removed
+[INFO] Removing library: complex-lib
+[SUCCESS] Library removed
 [0;32m[PASS][0m Complex library tree should be deleted
 [0;32m[PASS][0m Should execute function from sourced library
 [0;32m[PASS][0m Should access variable from sourced library

@@ -6,18 +6,18 @@
 [0;32m[PASS][0m Should create ARTY_HOME directory
 [0;32m[PASS][0m Should create libs directory
 [0;32m[PASS][0m Should create bin directory
-[0;32m[SUCCESS][0m Initialized arty at /tmp/tmp.3yErm42xJB/.arty
+[SUCCESS] Initialized arty at /tmp/tmp.Lb4JaDr1OX/.arty
 [0;32m[PASS][0m Should succeed with empty references
 [0;32m[PASS][0m Should report config file not found
 [0;32m[PASS][0m Should create libs directory
-[0;32m[SUCCESS][0m Initialized arty at /tmp/tmp.tTHBTIpqP5/.arty
+[SUCCESS] Initialized arty at /tmp/tmp.lSnxmAONtP/.arty
 [0;32m[PASS][0m Install command should succeed
 [0;32m[PASS][0m Should extract my-lib from URL
 [0;32m[PASS][0m Should extract another-lib from URL
 [0;32m[PASS][0m Both URLs should normalize to same ID
 [0;32m[PASS][0m Normalized ID should contain my-lib
 [0;32m[PASS][0m Should show no libraries message
-[0;34m[INFO][0m No libraries installed
+[INFO] No libraries installed
 [0;32m[PASS][0m ls alias should work without errors
 
 [0;36m═══════════════════════════════════════════════════════[0m

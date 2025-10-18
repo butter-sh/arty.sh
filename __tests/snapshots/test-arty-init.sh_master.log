@@ -3,30 +3,30 @@
 [0;36m  Init Functionality Tests[0m
 [0;36m═══════════════════════════════════════════════════════[0m
 
-[0;34m[INFO][0m Initializing new arty project: test-project
-[0;34m[INFO][0m Creating project structure
-[0;32m[SUCCESS][0m Created /tmp/tmp.KkWIe1P3gg/arty.yml
-[0;32m[SUCCESS][0m Created .arty/ folder structure
+[INFO] Initializing new arty project: test-project
+[INFO] Creating project structure
+[SUCCESS] Created /tmp/tmp.ys7XwBPJPo/arty.yml
+[SUCCESS] Created .arty/ folder structure
 [0;32m[PASS][0m Should create arty.yml file
 [0;32m[PASS][0m Config should contain project name
-[0;34m[INFO][0m Initializing new arty project: test-project
-[0;34m[INFO][0m Creating project structure
-[0;32m[SUCCESS][0m Created /tmp/tmp.eXHaZia9nq/arty.yml
-[0;32m[SUCCESS][0m Created .arty/ folder structure
+[INFO] Initializing new arty project: test-project
+[INFO] Creating project structure
+[SUCCESS] Created /tmp/tmp.eKiff0TaFX/arty.yml
+[SUCCESS] Created .arty/ folder structure
 [0;32m[PASS][0m Should create .arty directory
 [0;32m[PASS][0m Should create bin directory
 [0;32m[PASS][0m Should create libs directory
 [0;32m[PASS][0m Should report that config already exists
-[0;34m[INFO][0m Initializing new arty project: my-cool-project
-[0;34m[INFO][0m Creating project structure
-[0;32m[SUCCESS][0m Created arty.yml
-[0;32m[SUCCESS][0m Created .arty/ folder structure
+[INFO] Initializing new arty project: my-cool-project
+[INFO] Creating project structure
+[SUCCESS] Created arty.yml
+[SUCCESS] Created .arty/ folder structure
 [0;32m[PASS][0m Should create arty.yml in subdirectory
 [0;32m[PASS][0m Should use directory name as project name
-[0;34m[INFO][0m Initializing new arty project: test-project
-[0;34m[INFO][0m Creating project structure
-[0;32m[SUCCESS][0m Created /tmp/tmp.Jdd4sm3rG3/arty.yml
-[0;32m[SUCCESS][0m Created .arty/ folder structure
+[INFO] Initializing new arty project: test-project
+[INFO] Creating project structure
+[SUCCESS] Created /tmp/tmp.9zWK1YYAi4/arty.yml
+[SUCCESS] Created .arty/ folder structure
 [0;32m[PASS][0m Should have name field
 [0;32m[PASS][0m Should have version field
 [0;32m[PASS][0m Should have description field
@@ -34,15 +34,15 @@
 [0;32m[PASS][0m Should have references field
 [0;32m[PASS][0m Should have main field
 [0;32m[PASS][0m Should have scripts field
-[0;34m[INFO][0m Initializing new arty project: test-project
-[0;34m[INFO][0m Creating project structure
-[0;32m[SUCCESS][0m Created /tmp/tmp.VnUisyNpqu/arty.yml
-[0;32m[SUCCESS][0m Created .arty/ folder structure
+[INFO] Initializing new arty project: test-project
+[INFO] Creating project structure
+[SUCCESS] Created /tmp/tmp.UPed9D6Zrv/arty.yml
+[SUCCESS] Created .arty/ folder structure
 [0;32m[PASS][0m Should set default version to 0.1.0
-[0;34m[INFO][0m Initializing new arty project: test-project
-[0;34m[INFO][0m Creating project structure
-[0;32m[SUCCESS][0m Created /tmp/tmp.sAAeRH36WE/arty.yml
-[0;32m[SUCCESS][0m Created .arty/ folder structure
+[INFO] Initializing new arty project: test-project
+[INFO] Creating project structure
+[SUCCESS] Created /tmp/tmp.1Un3MF1npL/arty.yml
+[SUCCESS] Created .arty/ folder structure
 [0;32m[PASS][0m Should set default license to MIT
 
 [0;36m═══════════════════════════════════════════════════════[0m
