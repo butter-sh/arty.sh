@@ -12,12 +12,47 @@ ARTY_LIBS_DIR="$ARTY_HOME/libs"
 ARTY_BIN_DIR="$ARTY_HOME/bin"
 ARTY_CONFIG_FILE="${ARTY_CONFIG_FILE:-arty.yml}"
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+# Colors for output - only use colors if output is to a terminal or if FORCE_COLOR is set
+if [[ -z "$FORCE_COLOR" ]]; then
+		if [[ "$FORCE_COLOR" = "1" ]]; then
+			export RED='\033[0;31m'
+			export GREEN='\033[0;32m'
+			export YELLOW='\033[1;33m'
+			export BLUE='\033[0;34m'
+			export CYAN='\033[0;36m'
+			export MAGENTA='\033[0;35m'
+			export BOLD='\033[1m'
+			export NC='\033[0m'
+
+		else
+			export RED=''
+			export GREEN=''
+			export YELLOW=''
+			export BLUE=''
+			export CYAN=''
+			export MAGENTA=''
+			export BOLD=''
+			export NC=''
+		fi
+elif [[ -t 1 ]] && [[ -t 2 ]]; then
+		export RED='\033[0;31m'
+		export GREEN='\033[0;32m'
+		export YELLOW='\033[1;33m'
+		export BLUE='\033[0;34m'
+		export CYAN='\033[0;36m'
+		export MAGENTA='\033[0;35m'
+		export BOLD='\033[1m'
+		export NC='\033[0m'
+else
+    export RED=''
+    export GREEN=''
+    export YELLOW=''
+    export BLUE=''
+    export CYAN=''
+		export MAGENTA=''
+		export BOLD=''
+		export NC=''
+fi
 
 # Global array to track installation stack (prevent circular dependencies)
 declare -g -A ARTY_INSTALL_STACK
