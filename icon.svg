@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="package-light-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2c3e50;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1a1a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="package-light-stroke" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#86efac;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4ade80;stop-opacity:1" />
+    </linearGradient>
+    <pattern id="carbon-texture-package-light" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="4" fill="#1a1a1a"/>
+      <circle cx="1" cy="1" r="0.5" fill="#2c3e50" opacity="0.3"/>
+      <circle cx="3" cy="3" r="0.5" fill="#2c3e50" opacity="0.3"/>
+    </pattern>
+    <filter id="package-light-glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="package-light-shadow">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+      <feOffset dx="0" dy="3" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background full area with carbon gradient and texture -->
+  <rect x="0" y="0" width="64" height="64" fill="url(#package-light-bg)"/>
+  <rect x="0" y="0" width="64" height="64" fill="url(#carbon-texture-package-light)" opacity="0.5"/>
+  
+  <!-- Icon centered and scaled up with light green -->
+  <g transform="translate(14, 14) scale(1.5)" filter="url(#package-light-shadow)">
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" 
+          fill="url(#package-light-stroke)" 
+          fill-opacity="0.15" 
+          stroke="url(#package-light-stroke)" 
+          stroke-width="2" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"
+          filter="url(#package-light-glow)"/>
+    <g stroke="url(#package-light-stroke)" 
+       stroke-width="2" 
+       stroke-linecap="round" 
+       stroke-linejoin="round" 
+       fill="none"
+       filter="url(#package-light-glow)">
+      <polyline points="7.5 4.21 12 6.81 16.5 4.21"/>
+      <polyline points="7.5 19.79 7.5 14.6 3 12"/>
+      <polyline points="21 12 16.5 14.6 16.5 19.79"/>
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+      <line x1="12" y1="22.08" x2="12" y2="12"/>
+    </g>
+  </g>
+</svg>

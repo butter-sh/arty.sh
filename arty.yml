@@ -1,0 +1,20 @@
+name: "@butter.sh/arty.sh"
+version: "1.0.0"
+description: "A bash library repository management system"
+author: "valknar@pivoine.art"
+license: "MIT"
+
+references:
+- https://github.com/butter-sh/leaf.sh.git
+- https://github.com/butter-sh/judge.sh.git
+
+main: "arty.sh"
+
+scripts:
+  test: "arty exec judge run"
+  test/update: "arty exec judge run -u"
+  test/setup: "arty exec judge setup"
+  test/verbose: "arty exec judge run -v"
+  test/ci: "TERM=linux arty exec judge run"
+  format: "shfmt -l -w ./*.sh ./examples/*.sh ./__tests/*.sh"
+  docs: BASE_PATH=arty.sh arty exec leaf . --logo ./icon.svg -o ./docs
