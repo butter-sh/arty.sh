@@ -17,4 +17,4 @@ scripts:
   test/verbose: "arty exec judge run -v"
   test/ci: "TERM=linux arty exec judge run"
   format: "shfmt -l -w ./*.sh ./examples/*.sh ./__tests/*.sh"
-  docs: BASE_PATH=arty.sh arty exec leaf . --logo ./icon.svg -o ./docs
+  docs: BASE_PATH=arty.sh arty exec leaf . -o ./docs
