@@ -1,2 +1,3 @@
-*
-!*_master.log
+# Ignore test snapshot outputs
+*.log
+*_master.log

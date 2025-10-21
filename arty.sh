@@ -11,6 +11,7 @@ ARTY_HOME="${ARTY_HOME:-$PROJECT_DIR}"
 ARTY_LIBS_DIR="$ARTY_HOME/libs"
 ARTY_BIN_DIR="$ARTY_HOME/bin"
 ARTY_CONFIG_FILE="${ARTY_CONFIG_FILE:-arty.yml}"
+ARTY_ENV="${ARTY_ENV:-default}"
 
 # Colors for output - only use colors if output is to a terminal or if FORCE_COLOR is set
 export FORCE_COLOR=${FORCE_COLOR:-"1"}
@@ -52,6 +53,55 @@ log_warn() {
 
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1" >&2
+}
+
+# Load environment variables from arty.yml
+load_env_vars() {
+    local config_file="${1:-$ARTY_CONFIG_FILE}"
+    
+    if [[ ! -f "$config_file" ]]; then
+        return 0  # No config file, nothing to load
+    fi
+    
+    # Check if YAML is valid
+    if ! yq eval '.' "$config_file" >/dev/null 2>&1; then
+        log_warn "Invalid YAML in config file, skipping env vars"
+        return 0
+    fi
+    
+    # Check if envs section exists
+    local has_envs=$(yq eval '.envs' "$config_file" 2>/dev/null)
+    if [[ "$has_envs" == "null" ]] || [[ -z "$has_envs" ]]; then
+        return 0  # No envs section
+    fi
+    
+    local current_env="$ARTY_ENV"
+    log_info "Loading environment variables from '$current_env' environment"
+    
+    # First load default variables if they exist
+    if yq eval '.envs.default' "$config_file" 2>/dev/null | grep -q -v '^null$'; then
+        while IFS='=' read -r key value; do
+            if [[ -n "$key" ]] && [[ "$key" != "null" ]] && [[ -n "$value" ]]; then
+                # Only export if not already set
+                if [[ -z "${!key:-}" ]]; then
+                    export "$key=$value"
+                    log_info "  Set $key (from default)"
+                fi
+            fi
+        done < <(yq eval '.envs.default | to_entries | .[] | .key + "=" + .value' "$config_file" 2>/dev/null)
+    fi
+    
+    # Then load environment-specific variables (which can override defaults)
+    if [[ "$current_env" != "default" ]]; then
+        if yq eval ".envs.$current_env" "$config_file" 2>/dev/null | grep -q -v '^null$'; then
+            while IFS='=' read -r key value; do
+                if [[ -n "$key" ]] && [[ "$key" != "null" ]] && [[ -n "$value" ]]; then
+                    export "$key=$value"
+                    log_info "  Set $key (from $current_env)"
+                fi
+            done < <(yq eval ".envs.$current_env | to_entries | .[] | .key + \"=\" + .value" "$config_file" 2>/dev/null)
+        fi
+    fi
 }
 
 # Check if yq is installed
@@ -454,6 +504,9 @@ EXAMPLES:
 
     # Source library in a script
     source <(arty source utils)
+    
+    # Use different environment
+    ARTY_ENV=production arty test
 
 PROJECT STRUCTURE:
     When running 'arty init' or 'arty deps', the following structure is created:
@@ -472,6 +525,7 @@ PROJECT STRUCTURE:
 ENVIRONMENT:
     ARTY_HOME       Home directory for arty (default: ~/.arty)
     ARTY_CONFIG     Config file name (default: arty.yml)
+    ARTY_ENV        Environment to load from arty.yml envs section (default: default)
 
 INSTALLATION:
     # Install arty.sh globally
@@ -515,6 +569,9 @@ exec_script() {
 main() {
     # Check for yq availability first
     check_yq
+    
+    # Load environment variables before any other operation
+    load_env_vars
     
     if [[ $# -eq 0 ]]; then
         show_usage
