@@ -11,9 +11,9 @@ setup() {
   cd "$TEST_ENV_DIR"
 }
 
+# Test cleanup
 teardown() {
   cleanup_test_env
-  cd /
   unset APP_ENV LOG_LEVEL DEBUG API_URL
   unset ARTY_ENV
 }
@@ -34,16 +34,16 @@ envs:
     DEBUG: "false"
 
 scripts:
-  test: "echo 'test'"
+  check: "echo APP_ENV=$APP_ENV LOG_LEVEL=$LOG_LEVEL DEBUG=$DEBUG"
 EOF
 
-  # Run arty command to trigger env loading
-  output=$($ARTY_SH help 2>&1)
+  # Run arty command and capture the output with environment variables
+  output=$(./arty.sh check 2>/dev/null)
 
-  # Check if environment variables were set
-  assert_equals "$APP_ENV" "default" "APP_ENV should be set to default"
-  assert_equals "$LOG_LEVEL" "info" "LOG_LEVEL should be set to info"
-  assert_equals "$DEBUG" "false" "DEBUG should be set to false"
+  # Check if environment variables were set in the script output
+  assert_contains "$output" "APP_ENV=default" "APP_ENV should be set to default"
+  assert_contains "$output" "LOG_LEVEL=info" "LOG_LEVEL should be set to info"
+  assert_contains "$output" "DEBUG=false" "DEBUG should be set to false"
 
   teardown
 }
@@ -68,17 +68,17 @@ envs:
     API_URL: "http://localhost:3000"
 
 scripts:
-  test: "echo 'test'"
+  check: "echo APP_ENV=$APP_ENV LOG_LEVEL=$LOG_LEVEL DEBUG=$DEBUG API_URL=$API_URL"
 EOF
 
   # Run with ARTY_ENV=development
-  ARTY_ENV=development $ARTY_SH help 2>&1 >/dev/null
+  output=$(ARTY_ENV=development ./arty.sh check 2>/dev/null)
 
   # Check if development environment variables were set
-  assert_equals "$APP_ENV" "development" "APP_ENV should be set to development"
-  assert_equals "$LOG_LEVEL" "debug" "LOG_LEVEL should be set to debug"
-  assert_equals "$DEBUG" "true" "DEBUG should be set to true"
-  assert_equals "$API_URL" "http://localhost:3000" "API_URL should be set"
+  assert_contains "$output" "APP_ENV=development" "APP_ENV should be set to development"
+  assert_contains "$output" "LOG_LEVEL=debug" "LOG_LEVEL should be set to debug"
+  assert_contains "$output" "DEBUG=true" "DEBUG should be set to true"
+  assert_contains "$output" "API_URL=http://localhost:3000" "API_URL should be set"
 
   teardown
 }
@@ -102,16 +102,16 @@ envs:
     DEBUG: "false"
 
 scripts:
-  test: "echo 'test'"
+  check: "echo APP_ENV=$APP_ENV LOG_LEVEL=$LOG_LEVEL DEBUG=$DEBUG"
 EOF
 
   # Run with ARTY_ENV=production
-  ARTY_ENV=production $ARTY_SH help 2>&1 >/dev/null
+  output=$(ARTY_ENV=production ./arty.sh check 2>/dev/null)
 
   # Check if production environment variables were set
-  assert_equals "$APP_ENV" "production" "APP_ENV should be set to production"
-  assert_equals "$LOG_LEVEL" "error" "LOG_LEVEL should be set to error"
-  assert_equals "$DEBUG" "false" "DEBUG should be set to false"
+  assert_contains "$output" "APP_ENV=production" "APP_ENV should be set to production"
+  assert_contains "$output" "LOG_LEVEL=error" "LOG_LEVEL should be set to error"
+  assert_contains "$output" "DEBUG=false" "DEBUG should be set to false"
 
   teardown
 }
@@ -130,10 +130,10 @@ scripts:
 EOF
 
   # Run arty - should not fail
-  output=$($ARTY_SH help 2>&1)
+  output=$(./arty.sh help 2>&1)
   exit_code=$?
 
-  assert_equals "$exit_code" "0" "Should exit successfully without envs section"
+  assert_equals "0" "$exit_code" "Should exit successfully without envs section"
 
   teardown
 }
@@ -158,15 +158,15 @@ envs:
     SHARED_VAR: "from_development"
 
 scripts:
-  test: "echo 'test'"
+  check: "echo APP_ENV=$APP_ENV SHARED_VAR=$SHARED_VAR"
 EOF
 
   # Run with development environment
-  ARTY_ENV=development $ARTY_SH help 2>&1 >/dev/null
+  output=$(ARTY_ENV=development ./arty.sh check 2>/dev/null)
 
   # Check that development overrides default
-  assert_equals "$APP_ENV" "development" "APP_ENV should be development"
-  assert_equals "$SHARED_VAR" "from_development" "SHARED_VAR should be overridden by development"
+  assert_contains "$output" "APP_ENV=development" "APP_ENV should be development"
+  assert_contains "$output" "SHARED_VAR=from_development" "SHARED_VAR should be overridden by development"
 
   teardown
 }
@@ -174,9 +174,6 @@ EOF
 # Test: Pre-existing environment variables are not overridden by default
 test_preserve_existing_env_vars() {
   setup
-
-  # Set environment variable before running arty
-  export APP_ENV="pre_existing"
 
   # Create test arty.yml
   cat >arty.yml <<'EOF'
@@ -189,15 +186,15 @@ envs:
     LOG_LEVEL: "info"
 
 scripts:
-  test: "echo 'test'"
+  check: "echo APP_ENV=$APP_ENV LOG_LEVEL=$LOG_LEVEL"
 EOF
 
-  # Run arty
-  $ARTY_SH help 2>&1 >/dev/null
+  # Run arty with pre-existing APP_ENV
+  output=$(APP_ENV="pre_existing" ./arty.sh check 2>/dev/null)
 
   # Check that pre-existing variable was preserved (for default env only)
-  assert_equals "$APP_ENV" "pre_existing" "Pre-existing APP_ENV should be preserved in default env"
-  assert_equals "$LOG_LEVEL" "info" "LOG_LEVEL should still be set"
+  assert_contains "$output" "APP_ENV=pre_existing" "Pre-existing APP_ENV should be preserved in default env"
+  assert_contains "$output" "LOG_LEVEL=info" "LOG_LEVEL should still be set"
 
   teardown
 }
@@ -217,7 +214,7 @@ envs:
 EOF
 
   # Run arty - should handle gracefully
-  output=$($ARTY_SH help 2>&1)
+  output=$(./arty.sh help 2>&1)
   exit_code=$?
 
   # Should not crash, just warn
@@ -244,9 +241,9 @@ scripts:
 EOF
 
   # Run script and capture output
-  output=$($ARTY_SH print_var 2>/dev/null)
+  output=$(./arty.sh print_var 2>/dev/null)
 
-  assert_equals "$output" "hello_world" "Script should have access to env vars"
+  assert_equals "hello_world" "$output" "Script should have access to env vars"
 
   teardown
 }
@@ -269,7 +266,7 @@ scripts:
 EOF
 
   # Run arty and capture stderr
-  output=$($ARTY_SH help 2>&1)
+  output=$(./arty.sh help 2>&1)
 
   assert_contains "$output" "Loading environment variables from 'default' environment" \
     "Should show loading message"
@@ -297,21 +294,18 @@ envs:
     PROD_ONLY: "yes"
 
 scripts:
-  test: "echo 'test'"
+  check: "echo ENV_NAME=$ENV_NAME STAGING_ONLY=$STAGING_ONLY PROD_ONLY=$PROD_ONLY"
 EOF
 
   # Test staging
-  ARTY_ENV=staging $ARTY_SH help 2>&1 >/dev/null
-  assert_equals "$ENV_NAME" "staging" "Should load staging environment"
-  assert_equals "$STAGING_ONLY" "yes" "Should have staging-only variable"
-
-  # Clear variables
-  unset ENV_NAME STAGING_ONLY PROD_ONLY
+  output=$(ARTY_ENV=staging ./arty.sh check 2>/dev/null)
+  assert_contains "$output" "ENV_NAME=staging" "Should load staging environment"
+  assert_contains "$output" "STAGING_ONLY=yes" "Should have staging-only variable"
 
   # Test production
-  ARTY_ENV=production $ARTY_SH help 2>&1 >/dev/null
-  assert_equals "$ENV_NAME" "production" "Should load production environment"
-  assert_equals "$PROD_ONLY" "yes" "Should have production-only variable"
+  output=$(ARTY_ENV=production ./arty.sh check 2>/dev/null)
+  assert_contains "$output" "ENV_NAME=production" "Should load production environment"
+  assert_contains "$output" "PROD_ONLY=yes" "Should have production-only variable"
 
   teardown
 }
@@ -329,7 +323,7 @@ run_tests() {
   FUNCTIONS=$(declare -F | grep "$PATTERN" | awk '{print $3}')
 
   # echo $FUNCTIONS
- 
+
   # Execute each function
   for func in $FUNCTIONS; do
     # echo "Executing: $func"

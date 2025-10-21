@@ -48,7 +48,7 @@ Successfully implemented a comprehensive environment variables feature for arty.
 8. Environment variables available in scripts
 9. Loading message appears in output
 10. Multiple environments defined
-11. Proper environment switching
+11. Environment isolation (no variable leakage between environments)
 
 **Test infrastructure:**
 - Uses judge.sh test framework (existing arty dependency)
