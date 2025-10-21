@@ -385,7 +385,8 @@ envs:
     PROD_ONLY: "yes"
 
 scripts:
-  check: "echo ENV_NAME=$ENV_NAME STAGING_ONLY=$STAGING_ONLY PROD_ONLY=$PROD_ONLY"
+  check_staging: "echo ENV_NAME=$ENV_NAME STAGING_ONLY=${STAGING_ONLY:-}"
+  check_production: "echo ENV_NAME=$ENV_NAME PROD_ONLY=${PROD_ONLY:-}"
 EOF
 
   # Test staging environment
@@ -396,7 +397,7 @@ export ARTY_CONFIG_FILE="${2}/arty.yml"
 export ARTY_ENV="staging"
 cd "${2}"
 source "${3}"
-main check
+main check_staging
 EOF
 
   output=$(bash "$TEST_ENV_DIR/run_staging.sh" "$ARTY_HOME" "$TEST_ENV_DIR" "$ARTY_SH" 2>/dev/null)
@@ -411,7 +412,7 @@ export ARTY_CONFIG_FILE="${2}/arty.yml"
 export ARTY_ENV="production"
 cd "${2}"
 source "${3}"
-main check
+main check_production
 EOF
 
   output=$(bash "$TEST_ENV_DIR/run_production.sh" "$ARTY_HOME" "$TEST_ENV_DIR" "$ARTY_SH" 2>/dev/null)
