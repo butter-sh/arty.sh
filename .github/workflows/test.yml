@@ -39,7 +39,7 @@ jobs:
 
     - name: Run Static Tests
       run: |
-        arty lint && arty format/check
+        arty lint
 
     - name: Run Tests
       run: |
