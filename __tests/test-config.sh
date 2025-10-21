@@ -9,7 +9,7 @@ export ARTY_SH_ROOT="$PWD"
 
 # Test behavior flags
 export ARTY_TEST_MODE=1
-export ARTY_SKIP_YQ_CHECK=0  # Set to 1 to skip yq availability check in tests
+export ARTY_SKIP_YQ_CHECK=0 # Set to 1 to skip yq availability check in tests
 
 # Color output in tests (set to 0 to disable)
 export ARTY_TEST_COLORS=1

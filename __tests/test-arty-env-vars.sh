@@ -21,7 +21,7 @@ test_load_default_env_vars() {
   setup
 
   # Create test arty.yml with envs section
-  cat > arty.yml <<'EOF'
+  cat >arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -36,7 +36,7 @@ scripts:
 EOF
 
   # Create wrapper script to run arty command
-  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+  cat >"$TEST_ENV_DIR/run_test.sh" <<'EOF'
 #!/usr/bin/env bash
 export ARTY_HOME="${1}"
 export ARTY_CONFIG_FILE="${2}/arty.yml"
@@ -61,7 +61,7 @@ test_load_development_env_vars() {
   setup
 
   # Create test arty.yml with multiple envs
-  cat > arty.yml <<'EOF'
+  cat >arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -80,7 +80,7 @@ scripts:
 EOF
 
   # Create wrapper script with ARTY_ENV=development
-  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+  cat >"$TEST_ENV_DIR/run_test.sh" <<'EOF'
 #!/usr/bin/env bash
 export ARTY_HOME="${1}"
 export ARTY_CONFIG_FILE="${2}/arty.yml"
@@ -107,7 +107,7 @@ test_load_production_env_vars() {
   setup
 
   # Create test arty.yml
-  cat > arty.yml <<'EOF'
+  cat >arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -125,7 +125,7 @@ scripts:
 EOF
 
   # Create wrapper script with ARTY_ENV=production
-  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+  cat >"$TEST_ENV_DIR/run_test.sh" <<'EOF'
 #!/usr/bin/env bash
 export ARTY_HOME="${1}"
 export ARTY_CONFIG_FILE="${2}/arty.yml"
@@ -151,7 +151,7 @@ test_no_envs_section() {
   setup
 
   # Create arty.yml without envs section
-  cat > arty.yml <<'EOF'
+  cat >arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -160,7 +160,7 @@ scripts:
 EOF
 
   # Create wrapper script to run help command
-  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+  cat >"$TEST_ENV_DIR/run_test.sh" <<'EOF'
 #!/usr/bin/env bash
 export ARTY_HOME="${1}"
 export ARTY_CONFIG_FILE="${2}/arty.yml"
@@ -183,7 +183,7 @@ test_env_vars_override() {
   setup
 
   # Create test arty.yml
-  cat > arty.yml <<'EOF'
+  cat >arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -202,7 +202,7 @@ scripts:
 EOF
 
   # Create wrapper script with development environment
-  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+  cat >"$TEST_ENV_DIR/run_test.sh" <<'EOF'
 #!/usr/bin/env bash
 export ARTY_HOME="${1}"
 export ARTY_CONFIG_FILE="${2}/arty.yml"
@@ -227,7 +227,7 @@ test_preserve_existing_env_vars() {
   setup
 
   # Create test arty.yml
-  cat > arty.yml <<'EOF'
+  cat >arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -241,7 +241,7 @@ scripts:
 EOF
 
   # Create wrapper script with pre-existing APP_ENV
-  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+  cat >"$TEST_ENV_DIR/run_test.sh" <<'EOF'
 #!/usr/bin/env bash
 export ARTY_HOME="${1}"
 export ARTY_CONFIG_FILE="${2}/arty.yml"
@@ -266,7 +266,7 @@ test_invalid_yaml() {
   setup
 
   # Create invalid YAML
-  cat > arty.yml <<'EOF'
+  cat >arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 envs:
@@ -276,7 +276,7 @@ envs:
 EOF
 
   # Create wrapper script to run help command
-  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+  cat >"$TEST_ENV_DIR/run_test.sh" <<'EOF'
 #!/usr/bin/env bash
 export ARTY_HOME="${1}"
 export ARTY_CONFIG_FILE="${2}/arty.yml"
@@ -299,7 +299,7 @@ test_env_vars_in_scripts() {
   setup
 
   # Create test arty.yml with script that uses env vars
-  cat > arty.yml <<'EOF'
+  cat >arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -312,7 +312,7 @@ scripts:
 EOF
 
   # Create wrapper script to run print_var
-  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+  cat >"$TEST_ENV_DIR/run_test.sh" <<'EOF'
 #!/usr/bin/env bash
 export ARTY_HOME="${1}"
 export ARTY_CONFIG_FILE="${2}/arty.yml"
@@ -334,7 +334,7 @@ test_loading_message() {
   setup
 
   # Create test arty.yml
-  cat > arty.yml <<'EOF'
+  cat >arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -347,7 +347,7 @@ scripts:
 EOF
 
   # Create wrapper script to run help command
-  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+  cat >"$TEST_ENV_DIR/run_test.sh" <<'EOF'
 #!/usr/bin/env bash
 export ARTY_HOME="${1}"
 export ARTY_CONFIG_FILE="${2}/arty.yml"
@@ -370,7 +370,7 @@ test_multiple_environments() {
   setup
 
   # Create arty.yml with three environments
-  cat > arty.yml <<'EOF'
+  cat >arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -390,7 +390,7 @@ scripts:
 EOF
 
   # Test staging environment
-  cat > "$TEST_ENV_DIR/run_staging.sh" <<'EOF'
+  cat >"$TEST_ENV_DIR/run_staging.sh" <<'EOF'
 #!/usr/bin/env bash
 export ARTY_HOME="${1}"
 export ARTY_CONFIG_FILE="${2}/arty.yml"
@@ -405,7 +405,7 @@ EOF
   assert_contains "$output" "STAGING_ONLY=yes" "Should have staging-only variable"
 
   # Test production environment
-  cat > "$TEST_ENV_DIR/run_production.sh" <<'EOF'
+  cat >"$TEST_ENV_DIR/run_production.sh" <<'EOF'
 #!/usr/bin/env bash
 export ARTY_HOME="${1}"
 export ARTY_CONFIG_FILE="${2}/arty.yml"

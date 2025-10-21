@@ -37,6 +37,10 @@ jobs:
     - name: Install dependencies
       run: arty deps
 
+    - name: Run Static Tests
+      run: |
+        arty lint && arty format/check
+
     - name: Run Tests
       run: |
         arty test/ci

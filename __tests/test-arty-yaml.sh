@@ -61,7 +61,7 @@ EOF
   output=$(bash "$TEST_ENV_DIR/test_version.sh" "$ARTY_SH" "$TEST_ENV_DIR/test.yml")
 
   assert_equals "1.2.3" "$output" "Should retrieve version field"
-    teardown
+  teardown
 }
 
 # Test: get_yaml_field handles missing file

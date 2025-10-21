@@ -1,6 +1,6 @@
 <div align="center">
 
-# 📦 arty.sh
+# arty.sh
 
 **Bash Library Repository Management System**
 
@@ -20,12 +20,12 @@
 
 ## Features
 
-- 📦 **Install bash libraries** from Git repositories
-- 🔗 **Dependency management** via `arty.yml`
-- 🪝 **Setup hooks** for library initialization
-- 🔗 **Binary linking** for executable scripts
-- 🌐 **Curl-installable** for easy distribution
-- 📋 **Package-like configuration** with YAML
+- **Install bash libraries** from Git repositories
+- **Dependency management** via `arty.yml`
+- **Setup hooks** for library initialization
+- **Binary linking** for executable scripts
+- **Curl-installable** for easy distribution
+- **Package-like configuration** with YAML
 
 ## System Requirements
 

@@ -1,7 +1,6 @@
 #!/bin/bash
 # Test suite for arty script execution functionality
 
-
 # Setup before each test
 setup() {
   TEST_ENV_DIR=$(create_test_env)
