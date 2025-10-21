@@ -5,35 +5,21 @@ author: "valknar@pivoine.art"
 license: "MIT"
 
 references:
+- https://github.com/butter-sh/clean.sh.git
 - https://github.com/butter-sh/leaf.sh.git
 - https://github.com/butter-sh/judge.sh.git
 
 main: "arty.sh"
 
-# Environment variables
-envs:
-  default:
-    APP_ENV: "default"
-    LOG_LEVEL: "info"
-    DEBUG: "false"
-  development:
-    APP_ENV: "development"
-    LOG_LEVEL: "debug"
-    DEBUG: "true"
-    API_URL: "http://localhost:3000"
-  production:
-    APP_ENV: "production"
-    LOG_LEVEL: "warn"
-    DEBUG: "false"
-    API_URL: "https://api.production.com"
-
 scripts:
+  lint: "arty exec clean lint *.sh __tests/*.sh"
+  lint/fix: "arty exec clean lint --fix *.sh __tests/*.sh"
+  format: "arty exec clean format *.sh __tests/*.sh"
+  format/check: "arty exec clean format --check *.sh __tests/*.sh"
   test: "arty exec judge run"
   test/update: "arty exec judge run -u"
   test/setup: "arty exec judge setup"
   test/verbose: "arty exec judge run -v"
   test/ci: "TERM=linux arty exec judge run"
-  test/env: "bash __tests/test-arty-env-vars.sh"
-  env/demo: "bash example-env-usage.sh"
   format: "shfmt -l -w ./*.sh ./examples/*.sh ./__tests/*.sh"
   docs: BASE_PATH=arty.sh arty exec leaf . --logo ./icon.svg -o ./docs

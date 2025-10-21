@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Test suite for arty install functionality
 
 # Source test helpers

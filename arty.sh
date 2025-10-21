@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # arty.sh - A bash library repository management system
 # Version: 1.0.0
@@ -58,26 +58,26 @@ log_error() {
 # Load environment variables from arty.yml
 load_env_vars() {
     local config_file="${1:-$ARTY_CONFIG_FILE}"
-    
+
     if [[ ! -f "$config_file" ]]; then
         return 0  # No config file, nothing to load
     fi
-    
+
     # Check if YAML is valid
     if ! yq eval '.' "$config_file" >/dev/null 2>&1; then
         log_warn "Invalid YAML in config file, skipping env vars"
         return 0
     fi
-    
+
     # Check if envs section exists
     local has_envs=$(yq eval '.envs' "$config_file" 2>/dev/null)
     if [[ "$has_envs" == "null" ]] || [[ -z "$has_envs" ]]; then
         return 0  # No envs section
     fi
-    
+
     local current_env="$ARTY_ENV"
     log_info "Loading environment variables from '$current_env' environment"
-    
+
     # First load default variables if they exist
     if yq eval '.envs.default' "$config_file" 2>/dev/null | grep -q -v '^null$'; then
         while IFS='=' read -r key value; do
@@ -90,7 +90,7 @@ load_env_vars() {
             fi
         done < <(yq eval '.envs.default | to_entries | .[] | .key + "=" + .value' "$config_file" 2>/dev/null)
     fi
-    
+
     # Then load environment-specific variables (which can override defaults)
     if [[ "$current_env" != "default" ]]; then
         if yq eval ".envs.$current_env" "$config_file" 2>/dev/null | grep -q -v '^null$'; then
@@ -118,7 +118,7 @@ check_yq() {
 init_arty() {
     if [[ ! -d "$ARTY_HOME" ]]; then
         mkdir -p "$ARTY_LIBS_DIR"
-				mkdir -p "$ARTY_BIN_DIR"
+        mkdir -p "$ARTY_BIN_DIR"
         log_success "Initialized arty at $ARTY_HOME"
     fi
 }
@@ -127,16 +127,16 @@ init_arty() {
 get_yaml_field() {
     local file="$1"
     local field="$2"
-    
+
     if [[ ! -f "$file" ]]; then
         return 1
     fi
-    
+
     # Check if file has valid YAML - yq will exit with error on invalid YAML
     if ! yq eval '.' "$file" >/dev/null 2>&1; then
         return 1
     fi
-    
+
     yq eval ".$field" "$file" 2>/dev/null || echo ""
 }
 
@@ -144,16 +144,16 @@ get_yaml_field() {
 get_yaml_array() {
     local file="$1"
     local field="$2"
-    
+
     if [[ ! -f "$file" ]]; then
         return 1
     fi
-    
+
     # Check if file has valid YAML - yq will exit with error on invalid YAML
     if ! yq eval '.' "$file" >/dev/null 2>&1; then
         return 1
     fi
-    
+
     yq eval ".${field}[]" "$file" 2>/dev/null
 }
 
@@ -161,22 +161,22 @@ get_yaml_array() {
 get_yaml_script() {
     local file="$1"
     local script_name="$2"
-    
+
     if [[ ! -f "$file" ]]; then
         return 1
     fi
-    
+
     yq eval ".scripts.${script_name}" "$file" 2>/dev/null || echo "null"
 }
 
 # List all script names from YAML
 list_yaml_scripts() {
     local file="$1"
-    
+
     if [[ ! -f "$file" ]]; then
         return 1
     fi
-    
+
     yq eval '.scripts | keys | .[]' "$file" 2>/dev/null
 }
 
@@ -222,17 +222,17 @@ install_lib() {
     local repo_url="$1"
     local lib_name="${2:-$(get_lib_name "$repo_url")}"
     local lib_dir="$ARTY_LIBS_DIR/$lib_name"
-    
+
     # Normalize the library identifier for circular dependency detection
     local lib_id=$(normalize_lib_id "$repo_url")
-    
+
     # Check for circular dependency
     if is_installing "$lib_id"; then
         log_warn "Circular dependency detected: $lib_name (already being installed)"
         log_info "Skipping to prevent infinite loop"
         return 0
     fi
-    
+
     # Check if already installed (optimization)
     if is_installed "$lib_name"; then
         log_info "Library '$lib_name' already installed, checking for updates..."
@@ -242,22 +242,22 @@ install_lib() {
         }
         return 0
     fi
-    
+
     # Mark as currently installing
     mark_installing "$lib_id"
-    
+
     init_arty
-    
+
     log_info "Installing library: $lib_name"
     log_info "Repository: $repo_url"
-    
+
     # Clone the repository
     git clone "$repo_url" "$lib_dir" || {
         log_error "Failed to clone repository"
         unmark_installing "$lib_id"
         return 1
     }
-    
+
     # Run setup hook if exists
     if [[ -f "$lib_dir/setup.sh" ]]; then
         log_info "Running setup hook..."
@@ -265,7 +265,7 @@ install_lib() {
             log_warn "Setup hook failed, continuing anyway..."
         }
     fi
-    
+
     # Link main script to .arty/bin if arty.yml has a main field
     if [[ -f "$lib_dir/arty.yml" ]]; then
         local main_script=$(get_yaml_field "$lib_dir/arty.yml" "main")
@@ -275,22 +275,22 @@ install_lib() {
                 local local_bin_dir="$ARTY_BIN_DIR"
                 local lib_name_stripped="$(basename $main_file .sh)"
                 local bin_link="$local_bin_dir/$lib_name_stripped"
-                
+
                 log_info "Linking main script: $main_script -> $bin_link"
                 ln -sf "$main_file" "$bin_link"
                 chmod +x "$main_file"
                 log_success "Main script linked to $bin_link"
             fi
         fi
-        
+
         # Install references from the library's arty.yml
         log_info "Found arty.yml, checking for references..."
         install_references "$lib_dir/arty.yml"
     fi
-    
+
     # Unmark as installing (we're done with this library)
     unmark_installing "$lib_id"
-    
+
     log_success "Library '$lib_name' installed successfully"
     log_info "Location: $lib_dir"
 }
@@ -298,21 +298,21 @@ install_lib() {
 # Install all references from arty.yml
 install_references() {
     local config_file="${1:-$ARTY_CONFIG_FILE}"
-    
+
     if [[ ! -f "$config_file" ]]; then
         log_error "Config file not found: $config_file"
         return 1
     fi
-    
+
     # Check if YAML is valid by trying to read it
     if ! yq eval '.' "$config_file" >/dev/null 2>&1; then
         log_error "Invalid YAML in config file: $config_file"
         return 1
     fi
-    
+
     # Initialize arty directory structure first
     init_arty
-    
+
     # Get all references using yq
     while IFS= read -r ref; do
         if [[ -n "$ref" ]] && [[ "$ref" != "null" ]]; then
@@ -325,20 +325,20 @@ install_references() {
 # List installed libraries
 list_libs() {
     init_arty
-    
+
     if [[ ! -d "$ARTY_LIBS_DIR" ]] || [[ -z "$(ls -A "$ARTY_LIBS_DIR" 2>/dev/null)" ]]; then
         log_info "No libraries installed"
         return 0
     fi
-    
+
     log_info "Installed libraries:"
     echo
-    
+
     for lib_dir in "$ARTY_LIBS_DIR"/*; do
         if [[ -d "$lib_dir" ]]; then
             local lib_name=$(basename "$lib_dir")
             local version=""
-            
+
             # Try to get version from arty.yml using yq
             if [[ -f "$lib_dir/arty.yml" ]]; then
                 version=$(get_yaml_field "$lib_dir/arty.yml" "version")
@@ -346,7 +346,7 @@ list_libs() {
                     version=""
                 fi
             fi
-            
+
             printf "  ${GREEN}%-20s${NC} %s\n" "$lib_name" "${version:-(unknown version)}"
         fi
     done
@@ -357,12 +357,12 @@ list_libs() {
 remove_lib() {
     local lib_name="$1"
     local lib_dir="$ARTY_LIBS_DIR/$lib_name"
-    
+
     if [[ ! -d "$lib_dir" ]]; then
         log_error "Library not found: $lib_name"
         return 1
     fi
-    
+
     log_info "Removing library: $lib_name"
     rm -rf "$lib_dir"
     log_success "Library removed"
@@ -371,22 +371,22 @@ remove_lib() {
 # Initialize a new arty.yml project
 init_project() {
     local project_name="${1:-$(basename "$PWD")}"
-    
+
     if [[ -f "$ARTY_CONFIG_FILE" ]]; then
         log_error "arty.yml already exists in current directory"
         return 1
     fi
-    
+
     log_info "Initializing new arty project: $project_name"
-    
+
     # Create local .arty folder structure
     local local_arty_dir=".arty"
     local local_bin_dir="$local_arty_dir/bin"
     local local_libs_dir="$local_arty_dir/libs"
-    
+
     log_info "Creating project structure"
     mkdir -p "$local_bin_dir" "$local_libs_dir"
-    
+
     cat > "$ARTY_CONFIG_FILE" << EOF
 name: "$project_name"
 version: "0.1.0"
@@ -407,7 +407,7 @@ scripts:
   test: "bash test.sh"
   build: "bash build.sh"
 EOF
-    
+
     log_success "Created $ARTY_CONFIG_FILE"
     log_success "Created .arty/ folder structure"
 }
@@ -417,12 +417,12 @@ source_lib() {
     local lib_name="$1"
     local lib_file="${2:-index.sh}"
     local lib_path="$ARTY_LIBS_DIR/$lib_name/$lib_file"
-    
+
     if [[ ! -f "$lib_path" ]]; then
         log_error "Library file not found: $lib_path"
         return 1
     fi
-    
+
     source "$lib_path"
 }
 
@@ -430,10 +430,10 @@ source_lib() {
 exec_lib() {
     local lib_name="$1"
     shift  # Remove lib_name from arguments, rest are passed to the script
-    
-		local lib_name_stripped="$(basename $lib_name .sh)"
+
+    local lib_name_stripped="$(basename $lib_name .sh)"
     local bin_path="$ARTY_BIN_DIR/$lib_name_stripped"
-    
+
     if [[ ! -f "$bin_path" ]]; then
         log_error "Library executable not found: $lib_name_stripped"
         log_info "Make sure the library is installed with 'arty deps' or 'arty install'"
@@ -449,12 +449,12 @@ exec_lib() {
         fi
         return 1
     fi
-    
+
     if [[ ! -x "$bin_path" ]]; then
         log_error "Library executable is not executable: $bin_path"
         return 1
     fi
-    
+
     # Execute the library's main script with all passed arguments
     "$bin_path" "$@"
 }
@@ -504,13 +504,13 @@ EXAMPLES:
 
     # Source library in a script
     source <(arty source utils)
-    
+
     # Use different environment
     ARTY_ENV=production arty test
 
 PROJECT STRUCTURE:
     When running 'arty init' or 'arty deps', the following structure is created:
-    
+
     project/
     ├── .arty/
     │   ├── bin/           # Linked executables (from 'main' field)
@@ -539,16 +539,16 @@ EOF
 exec_script() {
     local script_name="$1"
     local config_file="${ARTY_CONFIG_FILE}"
-    
+
     if [[ ! -f "$config_file" ]]; then
         log_error "Config file not found: $config_file"
         log_info "Run this command in a directory with arty.yml"
         return 1
     fi
-    
+
     # Get script command using yq
     local cmd=$(get_yaml_script "$config_file" "$script_name")
-    
+
     if [[ -z "$cmd" ]] || [[ "$cmd" == "null" ]]; then
         log_error "Script not found in arty.yml: $script_name"
         log_info "Available scripts:"
@@ -559,7 +559,7 @@ exec_script() {
         done < <(list_yaml_scripts "$config_file")
         return 1
     fi
-    
+
     log_info "Executing script: $script_name"
     eval "$cmd"
     return $?
@@ -569,24 +569,24 @@ exec_script() {
 main() {
     # Check for yq availability first
     check_yq
-    
+
     # Load environment variables before any other operation
     load_env_vars
-    
+
     if [[ $# -eq 0 ]]; then
         show_usage
         exit 0
     fi
-    
+
     local command="$1"
     shift
-    
+
     case "$command" in
         install)
             if [[ $# -eq 0 ]]; then
-              	install_references
-						else
-            		install_lib "$@"
+                install_references
+            else
+                install_lib "$@"
             fi
             ;;
         deps)

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Test configuration for arty.sh test suite
 # This file is sourced by test files to set common configuration
 export TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

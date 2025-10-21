@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Test suite for arty environment variables feature
 
 # Setup before each test

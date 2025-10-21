@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Test suite for arty dependency management and circular dependency detection
 
 
@@ -20,7 +20,7 @@ teardown() {
 # Test: mark_installing and is_installing work correctly
 test_dependency_tracking() {
     setup
-    
+
     cat > "$TEST_ENV_DIR/test_tracking.sh" << 'EOF'
 #!/usr/bin/env bash
 source "${1}"
@@ -39,9 +39,9 @@ else
     echo "UNMARKED"
 fi
 EOF
-    
+
     output=$(bash "$TEST_ENV_DIR/test_tracking.sh" "$ARTY_SH")
-    
+
     assert_contains "$output" "MARKED" "Library should be marked as installing"
     assert_contains "$output" "UNMARKED" "Library should be unmarked after unmark_installing"
     assert_not_contains "$output" "STILL_MARKED" "Library should not be marked after unmarking"
@@ -51,7 +51,7 @@ EOF
 # Test: is_installing returns false for non-tracked library
 test_is_installing_false_for_untracked() {
     setup
-    
+
     cat > "$TEST_ENV_DIR/test_untracked.sh" << 'EOF'
 #!/usr/bin/env bash
 source "${1}"
@@ -62,9 +62,9 @@ else
     echo "NOT_TRACKED"
 fi
 EOF
-    
+
     output=$(bash "$TEST_ENV_DIR/test_untracked.sh" "$ARTY_SH")
-    
+
     assert_contains "$output" "NOT_TRACKED" "Untracked library should not be marked as installing"
     teardown
 }
@@ -72,7 +72,7 @@ EOF
 # Test: multiple libraries can be tracked simultaneously
 test_multiple_library_tracking() {
     setup
-    
+
     cat > "$TEST_ENV_DIR/test_multiple.sh" << 'EOF'
 #!/usr/bin/env bash
 source "${1}"
@@ -97,9 +97,9 @@ if is_installing "lib3"; then count2=$((count2+1)); fi
 
 echo "COUNT2:$count2"
 EOF
-    
+
     output=$(bash "$TEST_ENV_DIR/test_multiple.sh" "$ARTY_SH")
-    
+
     assert_contains "$output" "COUNT:3" "All three libraries should be tracked"
     assert_contains "$output" "COUNT2:2" "Two libraries should remain after unmarking one"
     teardown
@@ -108,9 +108,9 @@ EOF
 # Test: is_installed checks directory existence
 test_is_installed_directory_check() {
     setup
-    
+
     mkdir -p "$ARTY_HOME/libs/test-lib"
-    
+
     cat > "$TEST_ENV_DIR/test_installed.sh" << 'EOF'
 #!/usr/bin/env bash
 export ARTY_HOME="${1}"
@@ -128,9 +128,9 @@ else
     echo "NONEXISTENT_NOT_INSTALLED"
 fi
 EOF
-    
+
     output=$(bash "$TEST_ENV_DIR/test_installed.sh" "$ARTY_HOME" "$ARTY_SH")
-    
+
     assert_contains "$output" "INSTALLED" "Existing library should be detected as installed"
     assert_contains "$output" "NONEXISTENT_NOT_INSTALLED" "Non-existent library should not be detected as installed"
     teardown
@@ -139,7 +139,7 @@ EOF
 # Test: normalize_lib_id is case-insensitive and removes .git
 test_normalize_lib_id_behavior() {
     setup
-    
+
     cat > "$TEST_ENV_DIR/test_normalize.sh" << 'EOF'
 #!/usr/bin/env bash
 source "${1}"
@@ -156,9 +156,9 @@ fi
 
 echo "ID1:$id1"
 EOF
-    
+
     output=$(bash "$TEST_ENV_DIR/test_normalize.sh" "$ARTY_SH")
-    
+
     assert_contains "$output" "NORMALIZED_SAME" "All variations should normalize to same ID"
     assert_contains "$output" "user/repository" "Normalized ID should be lowercase without .git"
     teardown
@@ -167,7 +167,7 @@ EOF
 # Test: get_lib_name extracts correct library name
 test_get_lib_name_extraction() {
     setup
-    
+
     cat > "$TEST_ENV_DIR/test_lib_name.sh" << 'EOF'
 #!/usr/bin/env bash
 source "${1}"
@@ -177,9 +177,9 @@ get_lib_name "https://github.com/user/another-lib"
 get_lib_name "git@github.com:user/ssh-lib.git"
 get_lib_name "https://gitlab.com/group/project-name.git"
 EOF
-    
+
     output=$(bash "$TEST_ENV_DIR/test_lib_name.sh" "$ARTY_SH")
-    
+
     assert_contains "$output" "my-awesome-lib" "Should extract library name from https URL with .git"
     assert_contains "$output" "another-lib" "Should extract library name from https URL without .git"
     assert_contains "$output" "ssh-lib" "Should extract library name from SSH URL"
@@ -190,7 +190,7 @@ EOF
 # Test: circular dependency detection in action
 test_circular_dependency_prevention() {
     setup
-    
+
     cat > "$TEST_ENV_DIR/test_circular.sh" << 'EOF'
 #!/usr/bin/env bash
 source "${1}"
@@ -217,9 +217,9 @@ else
     echo "CLEARED"
 fi
 EOF
-    
+
     output=$(bash "$TEST_ENV_DIR/test_circular.sh" "$ARTY_SH")
-    
+
     assert_contains "$output" "CIRCULAR_DETECTED" "Should detect when library is already being installed"
     assert_contains "$output" "CLEARED" "Should clear after unmarking"
     assert_not_contains "$output" "STILL_CIRCULAR" "Should not detect circular after clearing"
@@ -229,7 +229,7 @@ EOF
 # Run all tests
 run_tests() {
     log_section "Dependency Management Tests"
-    
+
     test_dependency_tracking
     test_is_installing_false_for_untracked
     test_multiple_library_tracking
