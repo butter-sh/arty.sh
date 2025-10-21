@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-
-# test-arty-env-vars.sh - Test environment variable loading functionality
-# Tests the new env vars feature for arty.sh
+# Test suite for arty environment variables feature
 
 # Setup before each test
 setup() {
@@ -23,7 +21,7 @@ test_load_default_env_vars() {
   setup
 
   # Create test arty.yml with envs section
-  cat >arty.yml <<'EOF'
+  cat > arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -37,8 +35,18 @@ scripts:
   check: "echo APP_ENV=$APP_ENV LOG_LEVEL=$LOG_LEVEL DEBUG=$DEBUG"
 EOF
 
-  # Run arty command and capture the output with environment variables
-  output=$(./arty.sh check 2>/dev/null)
+  # Create wrapper script to run arty command
+  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+#!/usr/bin/env bash
+export ARTY_HOME="${1}"
+export ARTY_CONFIG_FILE="${2}/arty.yml"
+cd "${2}"
+source "${3}"
+main check
+EOF
+
+  # Run arty command and capture the output
+  output=$(bash "$TEST_ENV_DIR/run_test.sh" "$ARTY_HOME" "$TEST_ENV_DIR" "$ARTY_SH" 2>/dev/null)
 
   # Check if environment variables were set in the script output
   assert_contains "$output" "APP_ENV=default" "APP_ENV should be set to default"
@@ -53,7 +61,7 @@ test_load_development_env_vars() {
   setup
 
   # Create test arty.yml with multiple envs
-  cat >arty.yml <<'EOF'
+  cat > arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -71,8 +79,19 @@ scripts:
   check: "echo APP_ENV=$APP_ENV LOG_LEVEL=$LOG_LEVEL DEBUG=$DEBUG API_URL=$API_URL"
 EOF
 
+  # Create wrapper script with ARTY_ENV=development
+  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+#!/usr/bin/env bash
+export ARTY_HOME="${1}"
+export ARTY_CONFIG_FILE="${2}/arty.yml"
+export ARTY_ENV="development"
+cd "${2}"
+source "${3}"
+main check
+EOF
+
   # Run with ARTY_ENV=development
-  output=$(ARTY_ENV=development ./arty.sh check 2>/dev/null)
+  output=$(bash "$TEST_ENV_DIR/run_test.sh" "$ARTY_HOME" "$TEST_ENV_DIR" "$ARTY_SH" 2>/dev/null)
 
   # Check if development environment variables were set
   assert_contains "$output" "APP_ENV=development" "APP_ENV should be set to development"
@@ -88,7 +107,7 @@ test_load_production_env_vars() {
   setup
 
   # Create test arty.yml
-  cat >arty.yml <<'EOF'
+  cat > arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -105,8 +124,19 @@ scripts:
   check: "echo APP_ENV=$APP_ENV LOG_LEVEL=$LOG_LEVEL DEBUG=$DEBUG"
 EOF
 
+  # Create wrapper script with ARTY_ENV=production
+  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+#!/usr/bin/env bash
+export ARTY_HOME="${1}"
+export ARTY_CONFIG_FILE="${2}/arty.yml"
+export ARTY_ENV="production"
+cd "${2}"
+source "${3}"
+main check
+EOF
+
   # Run with ARTY_ENV=production
-  output=$(ARTY_ENV=production ./arty.sh check 2>/dev/null)
+  output=$(bash "$TEST_ENV_DIR/run_test.sh" "$ARTY_HOME" "$TEST_ENV_DIR" "$ARTY_SH" 2>/dev/null)
 
   # Check if production environment variables were set
   assert_contains "$output" "APP_ENV=production" "APP_ENV should be set to production"
@@ -121,7 +151,7 @@ test_no_envs_section() {
   setup
 
   # Create arty.yml without envs section
-  cat >arty.yml <<'EOF'
+  cat > arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -129,8 +159,18 @@ scripts:
   test: "echo 'test'"
 EOF
 
+  # Create wrapper script to run help command
+  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+#!/usr/bin/env bash
+export ARTY_HOME="${1}"
+export ARTY_CONFIG_FILE="${2}/arty.yml"
+cd "${2}"
+source "${3}"
+main help
+EOF
+
   # Run arty - should not fail
-  output=$(./arty.sh help 2>&1)
+  output=$(bash "$TEST_ENV_DIR/run_test.sh" "$ARTY_HOME" "$TEST_ENV_DIR" "$ARTY_SH" 2>&1)
   exit_code=$?
 
   assert_equals "0" "$exit_code" "Should exit successfully without envs section"
@@ -143,7 +183,7 @@ test_env_vars_override() {
   setup
 
   # Create test arty.yml
-  cat >arty.yml <<'EOF'
+  cat > arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -161,8 +201,19 @@ scripts:
   check: "echo APP_ENV=$APP_ENV SHARED_VAR=$SHARED_VAR"
 EOF
 
+  # Create wrapper script with development environment
+  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+#!/usr/bin/env bash
+export ARTY_HOME="${1}"
+export ARTY_CONFIG_FILE="${2}/arty.yml"
+export ARTY_ENV="development"
+cd "${2}"
+source "${3}"
+main check
+EOF
+
   # Run with development environment
-  output=$(ARTY_ENV=development ./arty.sh check 2>/dev/null)
+  output=$(bash "$TEST_ENV_DIR/run_test.sh" "$ARTY_HOME" "$TEST_ENV_DIR" "$ARTY_SH" 2>/dev/null)
 
   # Check that development overrides default
   assert_contains "$output" "APP_ENV=development" "APP_ENV should be development"
@@ -176,7 +227,7 @@ test_preserve_existing_env_vars() {
   setup
 
   # Create test arty.yml
-  cat >arty.yml <<'EOF'
+  cat > arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -189,8 +240,19 @@ scripts:
   check: "echo APP_ENV=$APP_ENV LOG_LEVEL=$LOG_LEVEL"
 EOF
 
+  # Create wrapper script with pre-existing APP_ENV
+  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+#!/usr/bin/env bash
+export ARTY_HOME="${1}"
+export ARTY_CONFIG_FILE="${2}/arty.yml"
+export APP_ENV="pre_existing"
+cd "${2}"
+source "${3}"
+main check
+EOF
+
   # Run arty with pre-existing APP_ENV
-  output=$(APP_ENV="pre_existing" ./arty.sh check 2>/dev/null)
+  output=$(bash "$TEST_ENV_DIR/run_test.sh" "$ARTY_HOME" "$TEST_ENV_DIR" "$ARTY_SH" 2>/dev/null)
 
   # Check that pre-existing variable was preserved (for default env only)
   assert_contains "$output" "APP_ENV=pre_existing" "Pre-existing APP_ENV should be preserved in default env"
@@ -204,7 +266,7 @@ test_invalid_yaml() {
   setup
 
   # Create invalid YAML
-  cat >arty.yml <<'EOF'
+  cat > arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 envs:
@@ -213,9 +275,18 @@ envs:
     - broken yaml
 EOF
 
+  # Create wrapper script to run help command
+  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+#!/usr/bin/env bash
+export ARTY_HOME="${1}"
+export ARTY_CONFIG_FILE="${2}/arty.yml"
+cd "${2}"
+source "${3}"
+main help
+EOF
+
   # Run arty - should handle gracefully
-  output=$(./arty.sh help 2>&1)
-  exit_code=$?
+  output=$(bash "$TEST_ENV_DIR/run_test.sh" "$ARTY_HOME" "$TEST_ENV_DIR" "$ARTY_SH" 2>&1)
 
   # Should not crash, just warn
   assert_contains "$output" "WARN" "Should warn about invalid YAML"
@@ -228,7 +299,7 @@ test_env_vars_in_scripts() {
   setup
 
   # Create test arty.yml with script that uses env vars
-  cat >arty.yml <<'EOF'
+  cat > arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -240,8 +311,18 @@ scripts:
   print_var: "echo $TEST_VAR"
 EOF
 
+  # Create wrapper script to run print_var
+  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+#!/usr/bin/env bash
+export ARTY_HOME="${1}"
+export ARTY_CONFIG_FILE="${2}/arty.yml"
+cd "${2}"
+source "${3}"
+main print_var
+EOF
+
   # Run script and capture output
-  output=$(./arty.sh print_var 2>/dev/null)
+  output=$(bash "$TEST_ENV_DIR/run_test.sh" "$ARTY_HOME" "$TEST_ENV_DIR" "$ARTY_SH" 2>/dev/null)
 
   assert_equals "hello_world" "$output" "Script should have access to env vars"
 
@@ -253,7 +334,7 @@ test_loading_message() {
   setup
 
   # Create test arty.yml
-  cat >arty.yml <<'EOF'
+  cat > arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -265,8 +346,18 @@ scripts:
   test: "echo 'test'"
 EOF
 
+  # Create wrapper script to run help command
+  cat > "$TEST_ENV_DIR/run_test.sh" <<'EOF'
+#!/usr/bin/env bash
+export ARTY_HOME="${1}"
+export ARTY_CONFIG_FILE="${2}/arty.yml"
+cd "${2}"
+source "${3}"
+main help
+EOF
+
   # Run arty and capture stderr
-  output=$(./arty.sh help 2>&1)
+  output=$(bash "$TEST_ENV_DIR/run_test.sh" "$ARTY_HOME" "$TEST_ENV_DIR" "$ARTY_SH" 2>&1)
 
   assert_contains "$output" "Loading environment variables from 'default' environment" \
     "Should show loading message"
@@ -279,7 +370,7 @@ test_multiple_environments() {
   setup
 
   # Create arty.yml with three environments
-  cat >arty.yml <<'EOF'
+  cat > arty.yml <<'EOF'
 name: "test-project"
 version: "1.0.0"
 
@@ -297,19 +388,40 @@ scripts:
   check: "echo ENV_NAME=$ENV_NAME STAGING_ONLY=$STAGING_ONLY PROD_ONLY=$PROD_ONLY"
 EOF
 
-  # Test staging
-  output=$(ARTY_ENV=staging ./arty.sh check 2>/dev/null)
+  # Test staging environment
+  cat > "$TEST_ENV_DIR/run_staging.sh" <<'EOF'
+#!/usr/bin/env bash
+export ARTY_HOME="${1}"
+export ARTY_CONFIG_FILE="${2}/arty.yml"
+export ARTY_ENV="staging"
+cd "${2}"
+source "${3}"
+main check
+EOF
+
+  output=$(bash "$TEST_ENV_DIR/run_staging.sh" "$ARTY_HOME" "$TEST_ENV_DIR" "$ARTY_SH" 2>/dev/null)
   assert_contains "$output" "ENV_NAME=staging" "Should load staging environment"
   assert_contains "$output" "STAGING_ONLY=yes" "Should have staging-only variable"
 
-  # Test production
-  output=$(ARTY_ENV=production ./arty.sh check 2>/dev/null)
+  # Test production environment
+  cat > "$TEST_ENV_DIR/run_production.sh" <<'EOF'
+#!/usr/bin/env bash
+export ARTY_HOME="${1}"
+export ARTY_CONFIG_FILE="${2}/arty.yml"
+export ARTY_ENV="production"
+cd "${2}"
+source "${3}"
+main check
+EOF
+
+  output=$(bash "$TEST_ENV_DIR/run_production.sh" "$ARTY_HOME" "$TEST_ENV_DIR" "$ARTY_SH" 2>/dev/null)
   assert_contains "$output" "ENV_NAME=production" "Should load production environment"
   assert_contains "$output" "PROD_ONLY=yes" "Should have production-only variable"
 
   teardown
 }
 
+# Run all tests
 run_tests() {
   # Pattern to match function names
   PATTERN=" test_"
