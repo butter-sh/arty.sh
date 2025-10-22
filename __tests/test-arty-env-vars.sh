@@ -359,8 +359,7 @@ EOF
   # Run arty and capture stderr
   output=$(bash "$TEST_ENV_DIR/run_test.sh" "$ARTY_HOME" "$TEST_ENV_DIR" "$ARTY_SH" 2>&1)
 
-  assert_contains "$output" "Loading environment variables from 'default' environment" \
-  "Should show loading message"
+  assert_contains "$output" "Loading environment variables from 'default' environment"  "Should show loading message"
 
   teardown
 }
