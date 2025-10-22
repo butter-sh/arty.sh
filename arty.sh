@@ -8,8 +8,8 @@ set -euo pipefail
 # Configuration
 PROJECT_DIR="$PWD/.arty"
 ARTY_HOME="${ARTY_HOME:-$PROJECT_DIR}"
-ARTY_LIBS_DIR="$ARTY_HOME/libs"
-ARTY_BIN_DIR="$ARTY_HOME/bin"
+ARTY_LIBS_DIR="${ARTY_LIBS_DIR:-$ARTY_HOME/libs}"
+ARTY_BIN_DIR="${ARTY_BIN_DIR:-$ARTY_HOME/bin}"
 ARTY_CONFIG_FILE="${ARTY_CONFIG_FILE:-arty.yml}"
 ARTY_ENV="${ARTY_ENV:-default}"
 
