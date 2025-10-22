@@ -5,11 +5,6 @@
 
 set -euo pipefail
 
-# Configuration
-PROJECT_DIR="$PWD/.arty"
-ARTY_HOME="${ARTY_HOME:-$PROJECT_DIR}"
-ARTY_LIBS_DIR="${ARTY_LIBS_DIR:-$ARTY_HOME/libs}"
-ARTY_BIN_DIR="${ARTY_BIN_DIR:-$ARTY_HOME/bin}"
 ARTY_CONFIG_FILE="${ARTY_CONFIG_FILE:-arty.yml}"
 ARTY_ENV="${ARTY_ENV:-default}"
 
@@ -83,7 +78,7 @@ load_env_vars() {
     while IFS='=' read -r key value; do
       if [[ -n "$key" ]] && [[ "$key" != "null" ]] && [[ -n "$value" ]]; then
         # Only export if not already set
-        if [[ -z "${!key:-}" ]]; then
+        if [[ ! -z "${key:-}" ]]; then
           export "$key=$value"
           log_info "  Set $key (from default)"
         fi
@@ -572,6 +567,12 @@ main() {
 
   # Load environment variables before any other operation
   load_env_vars
+
+  # Configuration
+  PROJECT_DIR="$PWD/.arty"
+  ARTY_HOME="${ARTY_HOME:-$PROJECT_DIR}"
+  ARTY_LIBS_DIR="${ARTY_LIBS_DIR:-$ARTY_HOME/libs}"
+  ARTY_BIN_DIR="${ARTY_BIN_DIR:-$ARTY_HOME/bin}"
 
   if [[ $# -eq 0 ]]; then
     show_usage
