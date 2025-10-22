@@ -303,7 +303,7 @@ test_permission_denied() {
 
     # Should handle permission denied gracefully (may vary by system)
     assert_true "true" "Permission test completed"
-  else
+    else
     log_skip "Skipping permission test on macOS"
   fi
 

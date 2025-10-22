@@ -122,12 +122,12 @@ EOF
   output=$(bash "$TEST_ENV_DIR/test_normalize.sh" "$ARTY_SH")
 
   # Both should normalize to the same value
-  first_line=$(echo "$output" | head -n1)
-  second_line=$(echo "$output" | tail -n1)
+first_line=$(echo "$output" | head -n1)
+second_line=$(echo "$output" | tail -n1)
 
-  assert_equals "$first_line" "$second_line" "Both URLs should normalize to same ID"
-  assert_contains "$first_line" "my-lib" "Normalized ID should contain my-lib"
-  teardown
+assert_equals "$first_line" "$second_line" "Both URLs should normalize to same ID"
+assert_contains "$first_line" "my-lib" "Normalized ID should contain my-lib"
+teardown
 }
 
 # Test: arty list shows no libraries initially

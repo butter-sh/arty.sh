@@ -360,7 +360,7 @@ EOF
   output=$(bash "$TEST_ENV_DIR/run_test.sh" "$ARTY_HOME" "$TEST_ENV_DIR" "$ARTY_SH" 2>&1)
 
   assert_contains "$output" "Loading environment variables from 'default' environment" \
-    "Should show loading message"
+  "Should show loading message"
 
   teardown
 }
@@ -424,24 +424,16 @@ EOF
 
 # Run all tests
 run_tests() {
-  # Pattern to match function names
-  PATTERN=" test_"
-
-  # echo "$0"
-  # Source the current file to load its functions
-  # source "$0"
-  # declare -F
-
-  # Get a list of function names matching the pattern
-  FUNCTIONS=$(declare -F | grep "$PATTERN" | awk '{print $3}')
-
-  # echo $FUNCTIONS
-
-  # Execute each function
-  for func in $FUNCTIONS; do
-    # echo "Executing: $func"
-    "$func"
-  done
+  test_load_default_env_vars
+  test_load_development_env_vars
+  test_load_production_env_vars
+  test_no_envs_section
+  test_env_vars_override
+  test_preserve_existing_env_vars
+  test_invalid_yaml
+  test_env_vars_in_scripts
+  test_loading_message
+  test_multiple_environments
 }
 
 export -f run_tests

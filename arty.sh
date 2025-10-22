@@ -24,7 +24,7 @@ if [[ "$FORCE_COLOR" = "0" ]]; then
   export MAGENTA=''
   export BOLD=''
   export NC=''
-else
+  else
   export RED='\033[0;31m'
   export GREEN='\033[0;32m'
   export YELLOW='\033[1;33m'
@@ -444,7 +444,7 @@ exec_lib() {
           echo "  -- $(basename "$exec_file")"
         fi
       done
-    else
+      else
       echo "  (none found - run 'arty deps' first)"
     fi
     return 1
@@ -583,51 +583,51 @@ main() {
 
   case "$command" in
   install)
-    if [[ $# -eq 0 ]]; then
-      install_references
-    else
-      install_lib "$@"
-    fi
-    ;;
-  deps)
+  if [[ $# -eq 0 ]]; then
     install_references
-    ;;
+    else
+    install_lib "$@"
+  fi
+  ;;
+  deps)
+  install_references
+  ;;
   list | ls)
-    list_libs
-    ;;
+  list_libs
+  ;;
   remove | rm)
-    if [[ $# -eq 0 ]]; then
-      log_error "Library name required"
-      exit 1
-    fi
-    remove_lib "$1"
-    ;;
+  if [[ $# -eq 0 ]]; then
+    log_error "Library name required"
+    exit 1
+  fi
+  remove_lib "$1"
+  ;;
   init)
-    init_project "$@"
-    ;;
+  init_project "$@"
+  ;;
   exec)
-    if [[ $# -eq 0 ]]; then
-      log_error "Library name required"
-      log_info "Usage: arty exec <library-name> [arguments]"
-      exit 1
-    fi
-    exec_lib "$@"
-    ;;
+  if [[ $# -eq 0 ]]; then
+    log_error "Library name required"
+    log_info "Usage: arty exec <library-name> [arguments]"
+    exit 1
+  fi
+  exec_lib "$@"
+  ;;
   source)
-    if [[ $# -eq 0 ]]; then
-      log_error "Library name required"
-      exit 1
-    fi
-    source_lib "$@"
-    ;;
+  if [[ $# -eq 0 ]]; then
+    log_error "Library name required"
+    exit 1
+  fi
+  source_lib "$@"
+  ;;
   help | --help | -h)
-    show_usage
-    ;;
+  show_usage
+  ;;
   *)
     # Try to execute as a script from arty.yml
-    exec_script "$command" "$@"
-    ;;
-  esac
+  exec_script "$command" "$@"
+  ;;
+esac
 }
 
 # Run main if script is executed directly
