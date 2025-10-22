@@ -1,4 +1,4 @@
-name: "@butter.sh/arty.sh"
+name: "arty.sh"
 version: "1.0.0"
 description: "A bash library repository management system"
 author: "valknar@pivoine.art"
