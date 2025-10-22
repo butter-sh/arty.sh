@@ -15,7 +15,7 @@ ARTY_ENV="${ARTY_ENV:-default}"
 
 # Colors for output - only use colors if output is to a terminal or if FORCE_COLOR is set
 export FORCE_COLOR=${FORCE_COLOR:-"1"}
-if [ "$FORCE_COLOR" = "0" ]; then
+if [[ "$FORCE_COLOR" = "0" ]]; then
   export RED=''
   export GREEN=''
   export YELLOW=''
