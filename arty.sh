@@ -455,32 +455,51 @@ install_lib() {
   log_info "Location: $lib_dir"
 }
 
-# Find if a library is defined in an ancestor config with 'into'
+# Find if a library is defined in current or ancestor configs with 'into'
 find_ancestor_into() {
   local lib_url="$1"
   local current_config="$2"
   local lib_url_normalized=$(normalize_lib_id "$lib_url")
 
-  # Walk up the config chain to find if this library is defined with 'into'
-  local config="$ARTY_CONFIG_FILE"
+  # Build list of ancestor configs to check
+  # Start with current config's directory and walk up to find parent arty.yml files
+  local config_to_check="$current_config"
+  local current_dir=$(dirname "$(realpath "$current_config")")
 
-  # Get count of references in root config
-  local ref_count=$(yq eval '.references | length' "$config" 2>/dev/null)
-  if [[ "$ref_count" == "null" ]] || [[ "$ref_count" == "0" ]]; then
-    echo ""
-    return
-  fi
+  # Check current config and walk up the directory tree
+  while true; do
+    if [[ -f "$config_to_check" ]]; then
+      # Get count of references
+      local ref_count=$(yq eval '.references | length' "$config_to_check" 2>/dev/null)
+      if [[ "$ref_count" != "null" ]] && [[ "$ref_count" != "0" ]]; then
+        # Check each reference
+        for ((i = 0; i < ref_count; i++)); do
+          local ref_data=$(parse_reference "$config_to_check" "$i")
+          IFS='|' read -r url into git_ref env_filter <<<"$ref_data"
 
-  # Check each reference in root config
-  for ((i = 0; i < ref_count; i++)); do
-    local ref_data=$(parse_reference "$config" "$i")
-    IFS='|' read -r url into git_ref env_filter <<<"$ref_data"
+          local url_normalized=$(normalize_lib_id "$url")
+          if [[ "$url_normalized" == "$lib_url_normalized" ]] && [[ -n "$into" ]]; then
+            # Found it with an 'into' directive
+            echo "$into|$config_to_check"
+            return
+          fi
+        done
+      fi
+    fi
 
-    local url_normalized=$(normalize_lib_id "$url")
-    if [[ "$url_normalized" == "$lib_url_normalized" ]] && [[ -n "$into" ]]; then
-      # Found it with an 'into' directive
-      echo "$into|$config"
-      return
+    # Move up one directory
+    local parent_dir=$(dirname "$current_dir")
+    if [[ "$parent_dir" == "$current_dir" ]] || [[ "$parent_dir" == "/" ]]; then
+      # Reached root, stop
+      break
+    fi
+    current_dir="$parent_dir"
+    config_to_check="$current_dir/arty.yml"
+
+    # Also check if we've reached the root ARTY_CONFIG_FILE
+    if [[ "$(realpath "$config_to_check" 2>/dev/null)" == "$(realpath "$ARTY_CONFIG_FILE" 2>/dev/null)" ]]; then
+      # Already checked above, stop
+      break
     fi
   done
 
