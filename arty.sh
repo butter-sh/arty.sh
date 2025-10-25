@@ -342,11 +342,13 @@ install_lib() {
   fi
 
   # Normalize the library identifier for circular dependency detection
+  # Include installation path to allow same library at different locations
   local lib_id=$(normalize_lib_id "$repo_url")
+  local lib_id_with_path="${lib_id}@${lib_dir}"
 
   # Check for circular dependency
-  if is_installing "$lib_id"; then
-    log_warn "Circular dependency detected: $lib_name (already being installed)"
+  if is_installing "$lib_id_with_path"; then
+    log_warn "Circular dependency detected: $lib_name (already being installed at $lib_dir)"
     log_info "Skipping to prevent infinite loop"
     return 0
   fi
@@ -358,13 +360,13 @@ install_lib() {
     if [[ "$ARTY_DRY_RUN" == "1" ]]; then
       log_info "[DRY RUN] Would check for updates..."
       # Mark as installing before processing nested deps to prevent infinite loops
-      mark_installing "$lib_id"
+      mark_installing "$lib_id_with_path"
       # Still process nested dependencies even in dry-run
       if [[ -f "$lib_dir/arty.yml" ]]; then
         log_info "Found arty.yml, checking for references..."
         install_references "$lib_dir/arty.yml"
       fi
-      unmark_installing "$lib_id"
+      unmark_installing "$lib_id_with_path"
       return 0
     fi
 
@@ -374,19 +376,19 @@ install_lib() {
     }
 
     # Mark as installing before processing nested deps to prevent infinite loops
-    mark_installing "$lib_id"
+    mark_installing "$lib_id_with_path"
     # Process nested dependencies even for already-installed libraries
     if [[ -f "$lib_dir/arty.yml" ]]; then
       log_info "Found arty.yml, checking for references..."
       install_references "$lib_dir/arty.yml"
     fi
-    unmark_installing "$lib_id"
+    unmark_installing "$lib_id_with_path"
 
     return 0
   fi
 
   # Mark as currently installing
-  mark_installing "$lib_id"
+  mark_installing "$lib_id_with_path"
 
   if [[ "$ARTY_DRY_RUN" != "1" ]]; then
     init_arty
@@ -399,14 +401,14 @@ install_lib() {
 
   if [[ "$ARTY_DRY_RUN" == "1" ]]; then
     log_info "[DRY RUN] Would clone repository and checkout $git_ref"
-    unmark_installing "$lib_id"
+    unmark_installing "$lib_id_with_path"
     return 0
   fi
 
   # Clone the repository
   git clone "$repo_url" "$lib_dir" || {
     log_error "Failed to clone repository"
-    unmark_installing "$lib_id"
+    unmark_installing "$lib_id_with_path"
     return 1
   }
 
@@ -449,7 +451,7 @@ install_lib() {
   fi
 
   # Unmark as installing (we're done with this library)
-  unmark_installing "$lib_id"
+  unmark_installing "$lib_id_with_path"
 
   log_success "Library '$lib_name' installed successfully"
   log_info "Location: $lib_dir"
@@ -487,20 +489,20 @@ find_ancestor_into() {
       fi
     fi
 
+    # Check if we've reached the root ARTY_CONFIG_FILE (after checking it)
+    if [[ "$(realpath "$config_to_check" 2>/dev/null)" == "$(realpath "$ARTY_CONFIG_FILE" 2>/dev/null)" ]]; then
+      # We've checked the root config, stop here
+      break
+    fi
+
     # Move up one directory
     local parent_dir=$(dirname "$current_dir")
     if [[ "$parent_dir" == "$current_dir" ]] || [[ "$parent_dir" == "/" ]]; then
-      # Reached root, stop
+      # Reached filesystem root, stop
       break
     fi
     current_dir="$parent_dir"
     config_to_check="$current_dir/arty.yml"
-
-    # Also check if we've reached the root ARTY_CONFIG_FILE
-    if [[ "$(realpath "$config_to_check" 2>/dev/null)" == "$(realpath "$ARTY_CONFIG_FILE" 2>/dev/null)" ]]; then
-      # Already checked above, stop
-      break
-    fi
   done
 
   echo ""
@@ -534,7 +536,13 @@ install_references() {
   fi
 
   # Process each reference by index
+  local i
   for ((i = 0; i < ref_count; i++)); do
+    # DEBUG for root arty.yml
+    if [[ "$config_file" == "$ARTY_CONFIG_FILE" ]] || [[ "$config_file" == "arty.yml" ]]; then
+      echo "[ROOT] Processing ref $i/$ref_count" >&2
+    fi
+
     # Parse the reference
     local ref_data=$(parse_reference "$config_file" "$i")
     IFS='|' read -r url into git_ref env_filter <<<"$ref_data"
@@ -557,12 +565,13 @@ install_references() {
     local lib_name=$(get_lib_name "$url")
 
     # If no 'into' specified, check if an ancestor config defines it with 'into'
+    local effective_config="$config_file"
     if [[ -z "$into" ]] && [[ "$config_file" != "$ARTY_CONFIG_FILE" ]]; then
       local ancestor_result=$(find_ancestor_into "$url" "$config_file")
       if [[ -n "$ancestor_result" ]]; then
         IFS='|' read -r ancestor_into ancestor_config <<<"$ancestor_result"
         into="$ancestor_into"
-        config_file="$ancestor_config"
+        effective_config="$ancestor_config"
       fi
     fi
 
@@ -570,8 +579,18 @@ install_references() {
     [[ -n "$into" ]] && log_info "Custom location: $into"
     [[ -n "$env_filter" ]] && log_info "Environment filter: [$env_filter]"
 
-    install_lib "$url" "$lib_name" "$git_ref" "$into" "$config_file" || log_warn "Failed to install reference: $url"
+    install_lib "$url" "$lib_name" "$git_ref" "$into" "$effective_config" || log_warn "Failed to install reference: $url"
+
+    # DEBUG for root arty.yml
+    if [[ "$config_file" == "$ARTY_CONFIG_FILE" ]] || [[ "$config_file" == "arty.yml" ]]; then
+      echo "[ROOT] Completed ref $i, i value after install_lib: $i, ref_count: $ref_count" >&2
+    fi
   done
+
+  # DEBUG for root arty.yml
+  if [[ "$config_file" == "$ARTY_CONFIG_FILE" ]] || [[ "$config_file" == "arty.yml" ]]; then
+    echo "[ROOT] Loop exited, final i: $i, ref_count: $ref_count" >&2
+  fi
 }
 
 # Build a reference tree from arty.yml showing all dependencies
