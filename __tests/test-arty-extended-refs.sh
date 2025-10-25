@@ -344,16 +344,15 @@ references:
 EOF
   (cd libB && git init -q && git config user.email "t@t.com" && git config user.name "T" && touch f && git add . && git commit -q -m "init")
 
-  # Create libC that already exists in libA's local .arty/libs with circular dependency back to libA
-  # Since libA was installed with 'into:', its deps go to libA/.arty/libs
-  mkdir -p libA/.arty/libs/libC
-  cat >libA/.arty/libs/libC/arty.yml <<'EOF'
+  # Create libC that already exists in .arty/libs with circular dependency back to libA
+  mkdir -p .arty/libs/libC
+  cat >.arty/libs/libC/arty.yml <<'EOF'
 name: "libC"
 version: "1.0.0"
 references:
   - url: https://github.com/user/libA.git
 EOF
-  (cd libA/.arty/libs/libC && git init -q && git config user.email "t@t.com" && git config user.name "T" && touch f && git add . && git commit -q -m "init")
+  (cd .arty/libs/libC && git init -q && git config user.email "t@t.com" && git config user.name "T" && touch f && git add . && git commit -q -m "init")
 
   # Run deps and ensure it completes without infinite loop
   output=$(timeout 10 bash "$ARTY_SH" deps --dry-run 2>&1 || echo "TIMEOUT")
