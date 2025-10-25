@@ -567,17 +567,21 @@ build_reference_tree() {
   local indent="${2:-}"
   local is_last="${3:-1}"
   local visited_file="${4:-/tmp/arty_visited_$$}"
+  local depth="${5:-0}"
 
   if [[ ! -f "$config_file" ]]; then
     return 0
   fi
 
-  # Prevent infinite loops by tracking visited configs
-  local config_path=$(realpath "$config_file" 2>/dev/null || echo "$config_file")
-  if grep -qx "$config_path" "$visited_file" 2>/dev/null; then
-    return 0
+  # Track visited library directories to prevent infinite circular recursion
+  # Only track at depth > 0 to allow root-level refs to show even if already nested
+  local config_dir=$(dirname "$(realpath "$config_file" 2>/dev/null || echo "$config_file")")
+  if [[ "$depth" -gt 0 ]]; then
+    if grep -qx "$config_dir" "$visited_file" 2>/dev/null; then
+      return 0
+    fi
+    echo "$config_dir" >>"$visited_file"
   fi
-  echo "$config_path" >>"$visited_file"
 
   # Count references
   local ref_count=$(yq eval '.references | length' "$config_file" 2>/dev/null)
@@ -586,6 +590,7 @@ build_reference_tree() {
   fi
 
   # Process each reference
+  local i
   for ((i = 0; i < ref_count; i++)); do
     local ref_data=$(parse_reference "$config_file" "$i")
     IFS='|' read -r url into git_ref env_filter <<<"$ref_data"
@@ -599,8 +604,21 @@ build_reference_tree() {
     fi
 
     local lib_name=$(get_lib_name "$url")
+
+    # Calculate is_last_ref by counting remaining valid refs
     local is_last_ref=0
-    [[ $((i + 1)) -eq $ref_count ]] && is_last_ref=1
+    local remaining=0
+    for ((j = i + 1; j < ref_count; j++)); do
+      local check_ref=$(parse_reference "$config_file" "$j")
+      IFS='|' read -r check_url _ _ check_env <<<"$check_ref"
+      if [[ -n "$check_url" ]] && [[ "$check_url" != "null" ]]; then
+        if [[ -z "$check_env" ]] || check_env_match "$ARTY_ENV" "$check_env"; then
+          remaining=1
+          break
+        fi
+      fi
+    done
+    [[ "$remaining" == "0" ]] && is_last_ref=1
 
     # If no 'into' specified, check if an ancestor config defines it with 'into'
     local effective_config="$config_file"
@@ -670,7 +688,8 @@ build_reference_tree() {
 
     # Recursively show nested dependencies
     if [[ -f "$lib_dir/arty.yml" ]]; then
-      build_reference_tree "$lib_dir/arty.yml" "${indent}${tree_continue}" "$is_last_ref" "$visited_file"
+      local next_depth=$((depth + 1))
+      build_reference_tree "$lib_dir/arty.yml" "${indent}${tree_continue}" "$is_last_ref" "$visited_file" "$next_depth"
     fi
   done
 }
