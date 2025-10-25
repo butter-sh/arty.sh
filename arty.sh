@@ -7,6 +7,7 @@ set -euo pipefail
 
 ARTY_CONFIG_FILE="${ARTY_CONFIG_FILE:-arty.yml}"
 ARTY_ENV="${ARTY_ENV:-default}"
+ARTY_DRY_RUN="${ARTY_DRY_RUN:-0}"
 
 # Colors for output - only use colors if output is to a terminal or if FORCE_COLOR is set
 export FORCE_COLOR=${FORCE_COLOR:-"1"}
@@ -77,11 +78,13 @@ load_env_vars() {
   if yq eval '.envs.default' "$config_file" 2>/dev/null | grep -q -v '^null$'; then
     while IFS='=' read -r key value; do
       if [[ -n "$key" ]] && [[ "$key" != "null" ]] && [[ -n "$value" ]]; then
-        # Only export if not already set
-        if [[ ! -z "${key:-}" ]]; then
-          export "$key=$value"
-          log_info "  Set $key (from default)"
+        # Only export if not already set (for default env only)
+        if [[ "$current_env" == "default" ]] && [[ -n "${!key:-}" ]]; then
+          log_info "  Skipping $key (already set)"
+          continue
         fi
+        export "$key=$value"
+        log_info "  Set $key (from default)"
       fi
     done < <(yq eval '.envs.default | to_entries | .[] | .key + "=" + .value' "$config_file" 2>/dev/null)
   fi
@@ -111,10 +114,14 @@ check_yq() {
 
 # Initialize arty environment
 init_arty() {
-  if [[ ! -d "$ARTY_HOME" ]]; then
-    mkdir -p "$ARTY_LIBS_DIR"
-    mkdir -p "$ARTY_BIN_DIR"
-    log_success "Initialized arty at $ARTY_HOME"
+  local arty_home="${ARTY_HOME:-$PWD/.arty}"
+  local libs_dir="${ARTY_LIBS_DIR:-$arty_home/libs}"
+  local bin_dir="${ARTY_BIN_DIR:-$arty_home/bin}"
+
+  if [[ ! -d "$arty_home" ]]; then
+    mkdir -p "$libs_dir"
+    mkdir -p "$bin_dir"
+    log_success "Initialized arty at $arty_home"
   fi
 }
 
@@ -181,6 +188,99 @@ get_lib_name() {
   basename "$repo_url" .git
 }
 
+# Parse reference - can be a string URL or an object with url, into, ref, env
+# Returns: url|into|ref|env (pipe-delimited)
+# env can be a single value or comma-separated list
+parse_reference() {
+  local config_file="$1"
+  local ref_index="$2"
+
+  # Check if reference is a string or object
+  local ref_type=$(yq eval ".references[$ref_index] | type" "$config_file" 2>/dev/null)
+
+  if [[ "$ref_type" == "!!str" ]]; then
+    # Simple string format: just the URL
+    local url=$(yq eval ".references[$ref_index]" "$config_file" 2>/dev/null)
+    echo "$url||||"
+  else
+    # Object format with url, into, ref, env fields
+    local url=$(yq eval ".references[$ref_index].url" "$config_file" 2>/dev/null)
+    local into=$(yq eval ".references[$ref_index].into" "$config_file" 2>/dev/null)
+    local ref=$(yq eval ".references[$ref_index].ref" "$config_file" 2>/dev/null)
+
+    # Check if env is an array or string
+    local env_type=$(yq eval ".references[$ref_index].env | type" "$config_file" 2>/dev/null)
+    local env=""
+
+    if [[ "$env_type" == "!!seq" ]]; then
+      # Array format - convert to comma-separated string
+      env=$(yq eval ".references[$ref_index].env | join(\",\")" "$config_file" 2>/dev/null)
+    else
+      # Single value or null
+      env=$(yq eval ".references[$ref_index].env" "$config_file" 2>/dev/null)
+    fi
+
+    # Replace "null" with empty string
+    [[ "$url" == "null" ]] && url=""
+    [[ "$into" == "null" ]] && into=""
+    [[ "$ref" == "null" ]] && ref=""
+    [[ "$env" == "null" ]] && env=""
+
+    echo "$url|$into|$ref|$env"
+  fi
+}
+
+# Check if current environment matches the filter
+# env_filter can be a single env or comma-separated list
+check_env_match() {
+  local current_env="$1"
+  local env_filter="$2"
+
+  # No filter means match all
+  [[ -z "$env_filter" ]] && return 0
+
+  # Convert comma-separated list to array
+  IFS=',' read -ra env_list <<< "$env_filter"
+
+  # Check if current env is in the list
+  for env in "${env_list[@]}"; do
+    # Trim whitespace
+    env=$(echo "$env" | xargs)
+    if [[ "$env" == "$current_env" ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+# Get git information for a repository
+get_git_info() {
+  local repo_dir="$1"
+
+  if [[ ! -d "$repo_dir/.git" ]]; then
+    echo "|||0"
+    return
+  fi
+
+  # Get short commit hash
+  local commit_hash=$(cd "$repo_dir" && git rev-parse --short HEAD 2>/dev/null || echo "")
+
+  # Get all refs pointing to current commit (tags, branches)
+  local refs=$(cd "$repo_dir" && git describe --all --exact-match 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null || echo "")
+
+  # Clean up refs (remove heads/ and tags/ prefixes)
+  refs=$(echo "$refs" | sed 's#^heads/##' | sed 's#^tags/##')
+
+  # Check if dirty (has uncommitted changes)
+  local is_dirty=0
+  if [[ -n "$(cd "$repo_dir" && git status --porcelain 2>/dev/null)" ]]; then
+    is_dirty=1
+  fi
+
+  echo "$commit_hash|$refs|$is_dirty"
+}
+
 # Normalize library identifier for tracking
 normalize_lib_id() {
   local repo_url="$1"
@@ -209,14 +309,26 @@ unmark_installing() {
 # Check if library is already installed
 is_installed() {
   local lib_name="$1"
-  [[ -d "$ARTY_LIBS_DIR/$lib_name" ]]
+  local libs_dir="${ARTY_LIBS_DIR:-${ARTY_HOME:-$PWD/.arty}/libs}"
+  [[ -d "$libs_dir/$lib_name" ]]
 }
 
 # Install a library from git repository
 install_lib() {
   local repo_url="$1"
   local lib_name="${2:-$(get_lib_name "$repo_url")}"
-  local lib_dir="$ARTY_LIBS_DIR/$lib_name"
+  local git_ref="${3:-main}"
+  local custom_into="${4:-}"
+
+  # Determine installation directory
+  local lib_dir
+  if [[ -n "$custom_into" ]]; then
+    # Custom directory relative to config file directory
+    local config_dir=$(dirname "$(realpath "${ARTY_CONFIG_FILE}")")
+    lib_dir="$config_dir/$custom_into"
+  else
+    lib_dir="$ARTY_LIBS_DIR/$lib_name"
+  fi
 
   # Normalize the library identifier for circular dependency detection
   local lib_id=$(normalize_lib_id "$repo_url")
@@ -229,10 +341,16 @@ install_lib() {
   fi
 
   # Check if already installed (optimization)
-  if is_installed "$lib_name"; then
-    log_info "Library '$lib_name' already installed, checking for updates..."
-    # Still try to update, but don't reinstall dependencies
-    (cd "$lib_dir" && git pull -q) || {
+  if [[ -d "$lib_dir" ]]; then
+    log_info "Library '$lib_name' already installed at $lib_dir"
+
+    if [[ "$ARTY_DRY_RUN" == "1" ]]; then
+      log_info "[DRY RUN] Would check for updates..."
+      return 0
+    fi
+
+    # Try to update
+    (cd "$lib_dir" && git fetch -q && git checkout -q "$git_ref" && git pull -q) || {
       log_warn "Failed to update library (continuing with existing version)"
     }
     return 0
@@ -241,16 +359,31 @@ install_lib() {
   # Mark as currently installing
   mark_installing "$lib_id"
 
-  init_arty
+  if [[ "$ARTY_DRY_RUN" != "1" ]]; then
+    init_arty
+  fi
 
   log_info "Installing library: $lib_name"
   log_info "Repository: $repo_url"
+  log_info "Git ref: $git_ref"
+  log_info "Location: $lib_dir"
+
+  if [[ "$ARTY_DRY_RUN" == "1" ]]; then
+    log_info "[DRY RUN] Would clone repository and checkout $git_ref"
+    unmark_installing "$lib_id"
+    return 0
+  fi
 
   # Clone the repository
   git clone "$repo_url" "$lib_dir" || {
     log_error "Failed to clone repository"
     unmark_installing "$lib_id"
     return 1
+  }
+
+  # Checkout the specified ref
+  (cd "$lib_dir" && git checkout -q "$git_ref") || {
+    log_warn "Failed to checkout ref '$git_ref', using default branch"
   }
 
   # Run setup hook if exists
@@ -261,8 +394,8 @@ install_lib() {
     }
   fi
 
-  # Link main script to .arty/bin if arty.yml has a main field
-  if [[ -f "$lib_dir/arty.yml" ]]; then
+  # Link main script to .arty/bin if arty.yml has a main field (only for standard installations)
+  if [[ -z "$custom_into" ]] && [[ -f "$lib_dir/arty.yml" ]]; then
     local main_script=$(get_yaml_field "$lib_dir/arty.yml" "main")
     if [[ -n "$main_script" ]] && [[ "$main_script" != "null" ]]; then
       local main_file="$lib_dir/$main_script"
@@ -305,46 +438,233 @@ install_references() {
     return 1
   fi
 
-  # Initialize arty directory structure first
-  init_arty
+  # Initialize arty directory structure first (unless dry run)
+  if [[ "$ARTY_DRY_RUN" != "1" ]]; then
+    init_arty
+  fi
 
-  # Get all references using yq
-  while IFS= read -r ref; do
-    if [[ -n "$ref" ]] && [[ "$ref" != "null" ]]; then
-      log_info "Installing reference: $ref"
-      install_lib "$ref" || log_warn "Failed to install reference: $ref"
-    fi
-  done < <(get_yaml_array "$config_file" "references")
-}
-
-# List installed libraries
-list_libs() {
-  init_arty
-
-  if [[ ! -d "$ARTY_LIBS_DIR" ]] || [[ -z "$(ls -A "$ARTY_LIBS_DIR" 2>/dev/null)" ]]; then
-    log_info "No libraries installed"
+  # Count references
+  local ref_count=$(yq eval '.references | length' "$config_file" 2>/dev/null)
+  if [[ "$ref_count" == "null" ]] || [[ "$ref_count" == "0" ]]; then
+    log_info "No references to install"
     return 0
   fi
 
-  log_info "Installed libraries:"
-  echo
+  # Process each reference by index
+  for ((i = 0; i < ref_count; i++)); do
+    # Parse the reference
+    local ref_data=$(parse_reference "$config_file" "$i")
+    IFS='|' read -r url into git_ref env_filter <<<"$ref_data"
 
-  for lib_dir in "$ARTY_LIBS_DIR"/*; do
-    if [[ -d "$lib_dir" ]]; then
-      local lib_name=$(basename "$lib_dir")
-      local version=""
+    # Skip empty URLs
+    if [[ -z "$url" ]] || [[ "$url" == "null" ]]; then
+      continue
+    fi
 
-      # Try to get version from arty.yml using yq
-      if [[ -f "$lib_dir/arty.yml" ]]; then
-        version=$(get_yaml_field "$lib_dir/arty.yml" "version")
-        if [[ "$version" == "null" ]] || [[ -z "$version" ]]; then
-          version=""
-        fi
-      fi
+    # Check environment filter using the new check_env_match function
+    if [[ -n "$env_filter" ]] && ! check_env_match "$ARTY_ENV" "$env_filter"; then
+      log_info "Skipping reference (env filter: [$env_filter], current: $ARTY_ENV): $url"
+      continue
+    fi
 
-      printf "  ${GREEN}%-20s${NC} %s\n" "$lib_name" "${version:-(unknown version)}"
+    # Use default ref if not specified
+    [[ -z "$git_ref" ]] && git_ref="main"
+
+    # Get library name
+    local lib_name=$(get_lib_name "$url")
+
+    log_info "Installing reference: $url"
+    [[ -n "$into" ]] && log_info "Custom location: $into"
+    [[ -n "$env_filter" ]] && log_info "Environment filter: [$env_filter]"
+
+    install_lib "$url" "$lib_name" "$git_ref" "$into" || log_warn "Failed to install reference: $url"
+  done
+}
+
+# Build a reference tree from arty.yml showing all dependencies
+build_reference_tree() {
+  local config_file="${1:-$ARTY_CONFIG_FILE}"
+  local indent="${2:-}"
+  local is_last="${3:-1}"
+  local visited_file="${4:-/tmp/arty_visited_$$}"
+
+  if [[ ! -f "$config_file" ]]; then
+    return 0
+  fi
+
+  # Prevent infinite loops by tracking visited configs
+  local config_path=$(realpath "$config_file" 2>/dev/null || echo "$config_file")
+  if grep -qx "$config_path" "$visited_file" 2>/dev/null; then
+    return 0
+  fi
+  echo "$config_path" >>"$visited_file"
+
+  # Count references
+  local ref_count=$(yq eval '.references | length' "$config_file" 2>/dev/null)
+  if [[ "$ref_count" == "null" ]] || [[ "$ref_count" == "0" ]]; then
+    return 0
+  fi
+
+  # Process each reference
+  for ((i = 0; i < ref_count; i++)); do
+    local ref_data=$(parse_reference "$config_file" "$i")
+    IFS='|' read -r url into git_ref env_filter <<<"$ref_data"
+
+    # Skip if no URL or env filter doesn't match
+    if [[ -z "$url" ]] || [[ "$url" == "null" ]]; then
+      continue
+    fi
+    if [[ -n "$env_filter" ]] && ! check_env_match "$ARTY_ENV" "$env_filter"; then
+      continue
+    fi
+
+    local lib_name=$(get_lib_name "$url")
+    local is_last_ref=0
+    [[ $((i + 1)) -eq $ref_count ]] && is_last_ref=1
+
+    # Determine installation directory
+    local lib_dir
+    if [[ -n "$into" ]]; then
+      local config_dir=$(dirname "$(realpath "${config_file}")")
+      lib_dir="$config_dir/$into"
+    else
+      lib_dir="$ARTY_LIBS_DIR/$lib_name"
+    fi
+
+    # Get version and git info
+    local version=""
+    local location="$lib_dir"
+
+    if [[ -f "$lib_dir/arty.yml" ]]; then
+      version=$(get_yaml_field "$lib_dir/arty.yml" "version")
+      [[ "$version" == "null" ]] || [[ -z "$version" ]] && version=""
+    fi
+
+    # Get git information
+    local git_info=$(get_git_info "$lib_dir")
+    IFS='|' read -r commit_hash git_refs is_dirty <<<"$git_info"
+
+    # Determine display version
+    local display_version="${version:-$commit_hash}"
+    [[ -z "$display_version" ]] && display_version="unknown"
+
+    # Tree characters
+    local tree_char="├──"
+    local tree_continue="│   "
+    if [[ "$is_last_ref" == "1" ]]; then
+      tree_char="└──"
+      tree_continue="    "
+    fi
+
+    # Print the reference line
+    printf "%s${tree_char} ${BOLD}${GREEN}%s${NC}" "$indent" "$lib_name"
+    printf " ${CYAN}%s${NC}" "$display_version"
+
+    # Add git refs if available
+    if [[ -n "$git_refs" ]]; then
+      printf " ${BLUE}(%s)${NC}" "$git_refs"
+    fi
+
+    # Add dirty indicator
+    if [[ "$is_dirty" == "1" ]]; then
+      printf " ${YELLOW}✗${NC}"
+    fi
+
+    # Add location info
+    if [[ -n "$into" ]]; then
+      printf " ${MAGENTA}→ %s${NC}" "$into"
+    fi
+
+    echo
+
+    # Recursively show nested dependencies
+    if [[ -f "$lib_dir/arty.yml" ]]; then
+      build_reference_tree "$lib_dir/arty.yml" "${indent}${tree_continue}" "$is_last_ref" "$visited_file"
     fi
   done
+}
+
+# List installed libraries with tree visualization
+list_libs() {
+  init_arty
+
+  if [[ ! -f "$ARTY_CONFIG_FILE" ]]; then
+    # Fallback to simple list if no arty.yml
+    if [[ ! -d "$ARTY_LIBS_DIR" ]] || [[ -z "$(ls -A "$ARTY_LIBS_DIR" 2>/dev/null)" ]]; then
+      log_info "No libraries installed"
+      return 0
+    fi
+
+    log_info "Installed libraries:"
+    echo
+
+    for lib_dir in "$ARTY_LIBS_DIR"/*; do
+      if [[ -d "$lib_dir" ]]; then
+        local lib_name=$(basename "$lib_dir")
+        local version=""
+
+        # Try to get version from arty.yml using yq
+        if [[ -f "$lib_dir/arty.yml" ]]; then
+          version=$(get_yaml_field "$lib_dir/arty.yml" "version")
+          if [[ "$version" == "null" ]] || [[ -z "$version" ]]; then
+            version=""
+          fi
+        fi
+
+        printf "  ${GREEN}%-20s${NC} %s\n" "$lib_name" "${version:-(unknown version)}"
+      fi
+    done
+    echo
+    return 0
+  fi
+
+  # Get project info
+  local project_name=$(get_yaml_field "$ARTY_CONFIG_FILE" "name")
+  local project_version=$(get_yaml_field "$ARTY_CONFIG_FILE" "version")
+
+  # Clean up name/version
+  [[ "$project_name" == "null" ]] && project_name="$(basename "$PWD")"
+  [[ "$project_version" == "null" ]] && project_version=""
+
+  # Check if there are any references
+  local ref_count=$(yq eval '.references | length' "$ARTY_CONFIG_FILE" 2>/dev/null)
+  if [[ "$ref_count" == "null" ]] || [[ "$ref_count" == "0" ]]; then
+    # No references defined, check for installed libraries
+    local libs_dir="${ARTY_LIBS_DIR:-${ARTY_HOME:-$PWD/.arty}/libs}"
+    if [[ ! -d "$libs_dir" ]] || [[ -z "$(ls -A "$libs_dir" 2>/dev/null)" ]]; then
+      # Show header but indicate no libraries
+      echo
+      printf "${BOLD}${GREEN}%s${NC}" "$project_name"
+      if [[ -n "$project_version" ]]; then
+        printf " ${CYAN}%s${NC}" "$project_version"
+      fi
+      echo
+      echo
+      log_info "No libraries installed"
+      echo
+      return 0
+    fi
+  fi
+
+  # Print header
+  echo
+  printf "${BOLD}${GREEN}%s${NC}" "$project_name"
+  if [[ -n "$project_version" ]]; then
+    printf " ${CYAN}%s${NC}" "$project_version"
+  fi
+  echo
+  echo
+
+  # Create temporary file for tracking visited configs
+  local visited_file="/tmp/arty_visited_$$"
+  : >"$visited_file"
+
+  # Build and display tree
+  build_reference_tree "$ARTY_CONFIG_FILE" "" 1 "$visited_file"
+
+  # Cleanup
+  rm -f "$visited_file"
+
   echo
 }
 
@@ -411,7 +731,8 @@ EOF
 source_lib() {
   local lib_name="$1"
   local lib_file="${2:-index.sh}"
-  local lib_path="$ARTY_LIBS_DIR/$lib_name/$lib_file"
+  local libs_dir="${ARTY_LIBS_DIR:-${ARTY_HOME:-$PWD/.arty}/libs}"
+  local lib_path="$libs_dir/$lib_name/$lib_file"
 
   if [[ ! -f "$lib_path" ]]; then
     log_error "Library file not found: $lib_path"
@@ -427,14 +748,15 @@ exec_lib() {
   shift # Remove lib_name from arguments, rest are passed to the script
 
   local lib_name_stripped="$(basename $lib_name .sh)"
-  local bin_path="$ARTY_BIN_DIR/$lib_name_stripped"
+  local bin_dir="${ARTY_BIN_DIR:-${ARTY_HOME:-$PWD/.arty}/bin}"
+  local bin_path="$bin_dir/$lib_name_stripped"
 
   if [[ ! -f "$bin_path" ]]; then
     log_error "Library executable not found: $lib_name_stripped"
     log_info "Make sure the library is installed with 'arty deps' or 'arty install'"
     log_info "Available executables:"
-    if [[ -d "$ARTY_BIN_DIR" ]]; then
-      for exec_file in $ARTY_BIN_DIR/*; do
+    if [[ -d "$bin_dir" ]]; then
+      for exec_file in $bin_dir/*; do
         if [[ -f "$exec_file" ]]; then
           echo "  -- $(basename "$exec_file")"
         fi
@@ -460,18 +782,21 @@ show_usage() {
 arty.sh - A bash library repository management system
 
 USAGE:
-    arty <command> [arguments]
+    arty <command> [arguments] [--dry-run]
 
 COMMANDS:
     install <repo-url> [name]  Install a library from git repository
-    deps                       Install all dependencies from arty.yml
-    list                       List installed libraries
+    deps [--dry-run]           Install all dependencies from arty.yml
+    list                       List installed libraries with dependency tree
     remove <name>              Remove an installed library
     init [name]                Initialize a new arty.yml project
     source <name> [file]       Source a library (for use in scripts)
     exec <lib-name> [args]     Execute a library's main script with arguments
     <script-name>              Execute a script defined in arty.yml
     help                       Show this help message
+
+FLAGS:
+    --dry-run                  Simulate installation without making changes
 
 EXAMPLES:
     # Install a library
@@ -483,7 +808,10 @@ EXAMPLES:
     # Install dependencies from arty.yml
     arty deps
 
-    # List installed libraries
+    # Dry run dependencies installation
+    arty deps --dry-run
+
+    # List installed libraries with tree view
     arty list
 
     # Initialize new project
@@ -502,6 +830,25 @@ EXAMPLES:
 
     # Use different environment
     ARTY_ENV=production arty test
+
+REFERENCE FORMATS:
+    References in arty.yml can be specified in two formats:
+
+    1. Simple URL format:
+       references:
+         - https://github.com/user/repo.git
+
+    2. Extended object format:
+       references:
+         - url: git@github.com:user/repo.git
+           into: custom/path       # Custom installation directory (relative to arty.yml)
+           ref: v1.0.0            # Git ref (branch, tag, or commit hash; default: main)
+           env: production        # Only install in this environment
+
+    3. Extended format with multiple environments:
+       references:
+         - url: git@github.com:user/dev-tools.git
+           env: [dev, ci]         # Install in dev OR ci environment
 
 PROJECT STRUCTURE:
     When running 'arty init' or 'arty deps', the following structure is created:
@@ -582,16 +929,61 @@ main() {
   local command="$1"
   shift
 
+  # Check for --dry-run flag
+  local dry_run_flag=0
+  for arg in "$@"; do
+    if [[ "$arg" == "--dry-run" ]]; then
+      dry_run_flag=1
+      break
+    fi
+  done
+
+  # Remove --dry-run from arguments
+  local args=()
+  for arg in "$@"; do
+    if [[ "$arg" != "--dry-run" ]]; then
+      args+=("$arg")
+    fi
+  done
+
+  # Set dry run mode
+  if [[ "$dry_run_flag" == "1" ]]; then
+    export ARTY_DRY_RUN=1
+    log_info "${YELLOW}[DRY RUN MODE]${NC} Simulating actions, no changes will be made"
+    echo
+  fi
+
   case "$command" in
   install)
-  if [[ $# -eq 0 ]]; then
+  if [[ ${#args[@]} -eq 0 ]]; then
     install_references
+    local install_result=$?
     else
-    install_lib "$@"
+    install_lib "${args[@]}"
+    local install_result=$?
+  fi
+  # Show tree after installation if successful and arty.yml exists and has references
+  if [[ $install_result -eq 0 ]] && [[ -f "$ARTY_CONFIG_FILE" ]]; then
+    local ref_count=$(yq eval '.references | length' "$ARTY_CONFIG_FILE" 2>/dev/null)
+    if [[ "$ref_count" != "null" ]] && [[ "$ref_count" != "0" ]]; then
+      echo
+      log_success "Installation complete!"
+      list_libs
+    fi
   fi
   ;;
   deps)
   install_references
+  local install_result=$?
+  # Show tree after installation if successful and arty.yml exists and has references
+  if [[ $install_result -eq 0 ]] && [[ -f "$ARTY_CONFIG_FILE" ]]; then
+    local ref_count=$(yq eval '.references | length' "$ARTY_CONFIG_FILE" 2>/dev/null)
+    if [[ "$ref_count" != "null" ]] && [[ "$ref_count" != "0" ]]; then
+      echo
+      log_success "Dependencies installed!"
+      list_libs
+    fi
+  fi
   ;;
   list | ls)
   list_libs
