@@ -319,12 +319,13 @@ install_lib() {
   local lib_name="${2:-$(get_lib_name "$repo_url")}"
   local git_ref="${3:-main}"
   local custom_into="${4:-}"
+  local config_file="${5:-$ARTY_CONFIG_FILE}"
 
   # Determine installation directory
   local lib_dir
   if [[ -n "$custom_into" ]]; then
     # Custom directory relative to config file directory
-    local config_dir=$(dirname "$(realpath "${ARTY_CONFIG_FILE}")")
+    local config_dir=$(dirname "$(realpath "${config_file}")")
     lib_dir="$config_dir/$custom_into"
   else
     lib_dir="$ARTY_LIBS_DIR/$lib_name"
@@ -492,7 +493,7 @@ install_references() {
     [[ -n "$into" ]] && log_info "Custom location: $into"
     [[ -n "$env_filter" ]] && log_info "Environment filter: [$env_filter]"
 
-    install_lib "$url" "$lib_name" "$git_ref" "$into" || log_warn "Failed to install reference: $url"
+    install_lib "$url" "$lib_name" "$git_ref" "$into" "$config_file" || log_warn "Failed to install reference: $url"
   done
 }
 

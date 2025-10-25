@@ -274,6 +274,41 @@ EOF
   teardown
 }
 
+# Test: nested into directives are relative to their defining arty.yml
+test_nested_into_relative_paths() {
+  setup
+
+  # Create root arty.yml with into directive
+  cat >arty.yml <<'EOF'
+name: "root"
+version: "1.0.0"
+references:
+  - url: https://github.com/user/parent.git
+    into: custom/parent
+EOF
+
+  # Create parent directory and arty.yml with nested into directive
+  mkdir -p custom/parent
+  cat >custom/parent/arty.yml <<'EOF'
+name: "parent"
+version: "2.0.0"
+references:
+  - url: https://github.com/user/child.git
+    into: nested/child
+EOF
+
+  # Initialize git in parent
+  (cd custom/parent && git init -q && git config user.email "t@t.com" && git config user.name "T" && touch f && git add . && git commit -q -m "init")
+
+  # Test that child's location is relative to parent's arty.yml
+  output=$(bash "$ARTY_SH" deps --dry-run 2>&1)
+
+  # Child should be at custom/parent/nested/child (relative to parent's arty.yml)
+  assert_contains "$output" "custom/parent/nested/child" "Nested into should be relative to parent arty.yml"
+
+  teardown
+}
+
 # Run all tests
 run_tests() {
   log_section "Extended Reference Format Tests"
@@ -287,6 +322,7 @@ run_tests() {
   test_check_env_match
   test_get_git_info
   test_list_tree_structure
+  test_nested_into_relative_paths
 }
 
 export -f run_tests
