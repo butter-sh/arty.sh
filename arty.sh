@@ -359,14 +359,6 @@ install_lib() {
 
     if [[ "$ARTY_DRY_RUN" == "1" ]]; then
       log_info "[DRY RUN] Would check for updates..."
-      # Mark as installing before processing nested deps to prevent infinite loops
-      mark_installing "$lib_id_with_path"
-      # Still process nested dependencies even in dry-run
-      if [[ -f "$lib_dir/arty.yml" ]]; then
-        log_info "Found arty.yml, checking for references..."
-        install_references "$lib_dir/arty.yml"
-      fi
-      unmark_installing "$lib_id_with_path"
       return 0
     fi
 
@@ -374,15 +366,6 @@ install_lib() {
     (cd "$lib_dir" && git fetch -q && git checkout -q "$git_ref" && git pull -q) || {
       log_warn "Failed to update library (continuing with existing version)"
     }
-
-    # Mark as installing before processing nested deps to prevent infinite loops
-    mark_installing "$lib_id_with_path"
-    # Process nested dependencies even for already-installed libraries
-    if [[ -f "$lib_dir/arty.yml" ]]; then
-      log_info "Found arty.yml, checking for references..."
-      install_references "$lib_dir/arty.yml"
-    fi
-    unmark_installing "$lib_id_with_path"
 
     return 0
   fi
@@ -538,11 +521,6 @@ install_references() {
   # Process each reference by index
   local i
   for ((i = 0; i < ref_count; i++)); do
-    # DEBUG for root arty.yml
-    if [[ "$config_file" == "$ARTY_CONFIG_FILE" ]] || [[ "$config_file" == "arty.yml" ]]; then
-      echo "[ROOT] Processing ref $i/$ref_count" >&2
-    fi
-
     # Parse the reference
     local ref_data=$(parse_reference "$config_file" "$i")
     IFS='|' read -r url into git_ref env_filter <<<"$ref_data"
@@ -580,17 +558,7 @@ install_references() {
     [[ -n "$env_filter" ]] && log_info "Environment filter: [$env_filter]"
 
     install_lib "$url" "$lib_name" "$git_ref" "$into" "$effective_config" || log_warn "Failed to install reference: $url"
-
-    # DEBUG for root arty.yml
-    if [[ "$config_file" == "$ARTY_CONFIG_FILE" ]] || [[ "$config_file" == "arty.yml" ]]; then
-      echo "[ROOT] Completed ref $i, i value after install_lib: $i, ref_count: $ref_count" >&2
-    fi
   done
-
-  # DEBUG for root arty.yml
-  if [[ "$config_file" == "$ARTY_CONFIG_FILE" ]] || [[ "$config_file" == "arty.yml" ]]; then
-    echo "[ROOT] Loop exited, final i: $i, ref_count: $ref_count" >&2
-  fi
 }
 
 # Build a reference tree from arty.yml showing all dependencies
