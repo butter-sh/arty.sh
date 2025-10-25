@@ -328,7 +328,13 @@ install_lib() {
     local config_dir=$(dirname "$(realpath "${config_file}")")
     lib_dir="$config_dir/$custom_into"
   else
-    lib_dir="$ARTY_LIBS_DIR/$lib_name"
+    # If processing a nested config (not root), use local .arty/libs
+    if [[ "$(realpath "${config_file}")" != "$(realpath "${ARTY_CONFIG_FILE}")" ]]; then
+      local config_dir=$(dirname "$(realpath "${config_file}")")
+      lib_dir="$config_dir/.arty/libs/$lib_name"
+    else
+      lib_dir="$ARTY_LIBS_DIR/$lib_name"
+    fi
   fi
 
   # Normalize the library identifier for circular dependency detection
