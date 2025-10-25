@@ -615,10 +615,21 @@ build_reference_tree() {
     local is_last_ref=0
     [[ $((i + 1)) -eq $ref_count ]] && is_last_ref=1
 
+    # If no 'into' specified, check if an ancestor config defines it with 'into'
+    local effective_config="$config_file"
+    if [[ -z "$into" ]] && [[ "$config_file" != "$ARTY_CONFIG_FILE" ]]; then
+      local ancestor_result=$(find_ancestor_into "$url" "$config_file")
+      if [[ -n "$ancestor_result" ]]; then
+        IFS='|' read -r ancestor_into ancestor_config <<<"$ancestor_result"
+        into="$ancestor_into"
+        effective_config="$ancestor_config"
+      fi
+    fi
+
     # Determine installation directory
     local lib_dir
     if [[ -n "$into" ]]; then
-      local config_dir=$(dirname "$(realpath "${config_file}")")
+      local config_dir=$(dirname "$(realpath "${effective_config}")")
       lib_dir="$config_dir/$into"
     else
       lib_dir="$ARTY_LIBS_DIR/$lib_name"
