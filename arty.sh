@@ -347,11 +347,14 @@ install_lib() {
 
     if [[ "$ARTY_DRY_RUN" == "1" ]]; then
       log_info "[DRY RUN] Would check for updates..."
+      # Mark as installing before processing nested deps to prevent infinite loops
+      mark_installing "$lib_id"
       # Still process nested dependencies even in dry-run
       if [[ -f "$lib_dir/arty.yml" ]]; then
         log_info "Found arty.yml, checking for references..."
         install_references "$lib_dir/arty.yml"
       fi
+      unmark_installing "$lib_id"
       return 0
     fi
 
@@ -360,11 +363,14 @@ install_lib() {
       log_warn "Failed to update library (continuing with existing version)"
     }
 
+    # Mark as installing before processing nested deps to prevent infinite loops
+    mark_installing "$lib_id"
     # Process nested dependencies even for already-installed libraries
     if [[ -f "$lib_dir/arty.yml" ]]; then
       log_info "Found arty.yml, checking for references..."
       install_references "$lib_dir/arty.yml"
     fi
+    unmark_installing "$lib_id"
 
     return 0
   fi

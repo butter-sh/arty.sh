@@ -309,6 +309,63 @@ EOF
   teardown
 }
 
+# Test: shared dependencies only install once (no infinite loop)
+test_shared_dependencies_no_loop() {
+  setup
+
+  # Create root arty.yml
+  cat >arty.yml <<'EOF'
+name: "root"
+version: "1.0.0"
+references:
+  - url: https://github.com/user/libA.git
+    into: libA
+  - url: https://github.com/user/libB.git
+    into: libB
+EOF
+
+  # Create libA that depends on libC
+  mkdir -p libA
+  cat >libA/arty.yml <<'EOF'
+name: "libA"
+version: "1.0.0"
+references:
+  - url: https://github.com/user/libC.git
+EOF
+  (cd libA && git init -q && git config user.email "t@t.com" && git config user.name "T" && touch f && git add . && git commit -q -m "init")
+
+  # Create libB that also depends on libC
+  mkdir -p libB
+  cat >libB/arty.yml <<'EOF'
+name: "libB"
+version: "1.0.0"
+references:
+  - url: https://github.com/user/libC.git
+EOF
+  (cd libB && git init -q && git config user.email "t@t.com" && git config user.name "T" && touch f && git add . && git commit -q -m "init")
+
+  # Create libC that already exists in .arty/libs with circular dependency back to libA
+  mkdir -p .arty/libs/libC
+  cat >.arty/libs/libC/arty.yml <<'EOF'
+name: "libC"
+version: "1.0.0"
+references:
+  - url: https://github.com/user/libA.git
+EOF
+  (cd .arty/libs/libC && git init -q && git config user.email "t@t.com" && git config user.name "T" && touch f && git add . && git commit -q -m "init")
+
+  # Run deps and ensure it completes without infinite loop
+  output=$(timeout 10 bash "$ARTY_SH" deps --dry-run 2>&1 || echo "TIMEOUT")
+
+  # Should complete successfully
+  assert_not_contains "$output" "TIMEOUT" "Should not timeout (infinite loop)"
+
+  # Should detect circular dependency when libC tries to install libA which is already being processed
+  assert_contains "$output" "Circular dependency detected" "Should detect shared dependency"
+
+  teardown
+}
+
 # Run all tests
 run_tests() {
   log_section "Extended Reference Format Tests"
@@ -323,6 +380,7 @@ run_tests() {
   test_get_git_info
   test_list_tree_structure
   test_nested_into_relative_paths
+  test_shared_dependencies_no_loop
 }
 
 export -f run_tests
