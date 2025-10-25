@@ -394,24 +394,27 @@ install_lib() {
     }
   fi
 
-  # Link main script to .arty/bin if arty.yml has a main field (only for standard installations)
-  if [[ -z "$custom_into" ]] && [[ -f "$lib_dir/arty.yml" ]]; then
-    local main_script=$(get_yaml_field "$lib_dir/arty.yml" "main")
-    if [[ -n "$main_script" ]] && [[ "$main_script" != "null" ]]; then
-      local main_file="$lib_dir/$main_script"
-      if [[ -f "$main_file" ]]; then
-        local local_bin_dir="$ARTY_BIN_DIR"
-        local lib_name_stripped="$(basename $main_file .sh)"
-        local bin_link="$local_bin_dir/$lib_name_stripped"
+  # Process arty.yml if it exists
+  if [[ -f "$lib_dir/arty.yml" ]]; then
+    # Link main script to .arty/bin (only for standard installations, not custom 'into')
+    if [[ -z "$custom_into" ]]; then
+      local main_script=$(get_yaml_field "$lib_dir/arty.yml" "main")
+      if [[ -n "$main_script" ]] && [[ "$main_script" != "null" ]]; then
+        local main_file="$lib_dir/$main_script"
+        if [[ -f "$main_file" ]]; then
+          local local_bin_dir="$ARTY_BIN_DIR"
+          local lib_name_stripped="$(basename $main_file .sh)"
+          local bin_link="$local_bin_dir/$lib_name_stripped"
 
-        log_info "Linking main script: $main_script -> $bin_link"
-        ln -sf "$main_file" "$bin_link"
-        chmod +x "$main_file"
-        log_success "Main script linked to $bin_link"
+          log_info "Linking main script: $main_script -> $bin_link"
+          ln -sf "$main_file" "$bin_link"
+          chmod +x "$main_file"
+          log_success "Main script linked to $bin_link"
+        fi
       fi
     fi
 
-    # Install references from the library's arty.yml
+    # Install nested dependencies (always, regardless of 'into')
     log_info "Found arty.yml, checking for references..."
     install_references "$lib_dir/arty.yml"
   fi
