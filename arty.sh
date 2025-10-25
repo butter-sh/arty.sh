@@ -285,7 +285,16 @@ get_git_info() {
 normalize_lib_id() {
   local repo_url="$1"
   # Convert to lowercase and remove .git suffix for consistent tracking
-  echo "${repo_url,,}" | sed 's/\.git$//'
+  local normalized="${repo_url,,}"
+  normalized=$(echo "$normalized" | sed 's/\.git$//')
+
+  # Normalize different Git URL formats to the same path
+  # https://github.com/user/repo -> github.com/user/repo
+  # git@github.com:user/repo -> github.com/user/repo
+  # ssh://git@github.com/user/repo -> github.com/user/repo
+  normalized=$(echo "$normalized" | sed -E 's#^https?://##' | sed -E 's#^git@([^:]+):#\1/#' | sed -E 's#^ssh://git@##')
+
+  echo "$normalized"
 }
 
 # Check if library is in installation stack
@@ -446,6 +455,38 @@ install_lib() {
   log_info "Location: $lib_dir"
 }
 
+# Find if a library is defined in an ancestor config with 'into'
+find_ancestor_into() {
+  local lib_url="$1"
+  local current_config="$2"
+  local lib_url_normalized=$(normalize_lib_id "$lib_url")
+
+  # Walk up the config chain to find if this library is defined with 'into'
+  local config="$ARTY_CONFIG_FILE"
+
+  # Get count of references in root config
+  local ref_count=$(yq eval '.references | length' "$config" 2>/dev/null)
+  if [[ "$ref_count" == "null" ]] || [[ "$ref_count" == "0" ]]; then
+    echo ""
+    return
+  fi
+
+  # Check each reference in root config
+  for ((i = 0; i < ref_count; i++)); do
+    local ref_data=$(parse_reference "$config" "$i")
+    IFS='|' read -r url into git_ref env_filter <<<"$ref_data"
+
+    local url_normalized=$(normalize_lib_id "$url")
+    if [[ "$url_normalized" == "$lib_url_normalized" ]] && [[ -n "$into" ]]; then
+      # Found it with an 'into' directive
+      echo "$into|$config"
+      return
+    fi
+  done
+
+  echo ""
+}
+
 # Install all references from arty.yml
 install_references() {
   local config_file="${1:-$ARTY_CONFIG_FILE}"
@@ -495,6 +536,16 @@ install_references() {
 
     # Get library name
     local lib_name=$(get_lib_name "$url")
+
+    # If no 'into' specified, check if an ancestor config defines it with 'into'
+    if [[ -z "$into" ]] && [[ "$config_file" != "$ARTY_CONFIG_FILE" ]]; then
+      local ancestor_result=$(find_ancestor_into "$url" "$config_file")
+      if [[ -n "$ancestor_result" ]]; then
+        IFS='|' read -r ancestor_into ancestor_config <<<"$ancestor_result"
+        into="$ancestor_into"
+        config_file="$ancestor_config"
+      fi
+    fi
 
     log_info "Installing reference: $url"
     [[ -n "$into" ]] && log_info "Custom location: $into"
