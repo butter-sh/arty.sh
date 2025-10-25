@@ -346,6 +346,11 @@ install_lib() {
 
     if [[ "$ARTY_DRY_RUN" == "1" ]]; then
       log_info "[DRY RUN] Would check for updates..."
+      # Still process nested dependencies even in dry-run
+      if [[ -f "$lib_dir/arty.yml" ]]; then
+        log_info "Found arty.yml, checking for references..."
+        install_references "$lib_dir/arty.yml"
+      fi
       return 0
     fi
 
@@ -353,6 +358,13 @@ install_lib() {
     (cd "$lib_dir" && git fetch -q && git checkout -q "$git_ref" && git pull -q) || {
       log_warn "Failed to update library (continuing with existing version)"
     }
+
+    # Process nested dependencies even for already-installed libraries
+    if [[ -f "$lib_dir/arty.yml" ]]; then
+      log_info "Found arty.yml, checking for references..."
+      install_references "$lib_dir/arty.yml"
+    fi
+
     return 0
   fi
 
