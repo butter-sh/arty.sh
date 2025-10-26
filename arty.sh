@@ -990,6 +990,7 @@ EOF
 # Execute a script from arty.yml
 exec_script() {
   local script_name="$1"
+  shift  # Remove script name from arguments
   local config_file="${ARTY_CONFIG_FILE}"
 
   if [[ ! -f "$config_file" ]]; then
@@ -1013,6 +1014,8 @@ exec_script() {
   fi
 
   log_info "Executing script: $script_name"
+  # Pass all remaining arguments to the script by executing in current shell context
+  # The $@ in the command will now refer to our function's remaining arguments
   eval "$cmd"
   return $?
 }
