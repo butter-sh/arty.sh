@@ -1014,9 +1014,13 @@ exec_script() {
   fi
 
   log_info "Executing script: $script_name"
-  # Pass all remaining arguments to the script by executing in current shell context
-  # The $@ in the command will now refer to our function's remaining arguments
-  eval "$cmd"
+  # Pass all remaining arguments to the script
+  # If the command doesn't already reference $@, append it
+  if [[ ! "$cmd" =~ \$@ ]]; then
+    cmd="$cmd"' "$@"'
+  fi
+  # The $@ in the command string will expand to the arguments passed after --
+  bash -c "$cmd" -- "$@"
   return $?
 }
 
